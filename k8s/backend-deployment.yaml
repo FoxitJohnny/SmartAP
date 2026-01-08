@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: smartap
+  labels:
+    app: backend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: backend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: smartap
+  labels:
+    app: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z postgres-service 5432; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "PostgreSQL is ready!"
+      - name: db-migrate
+        image: smartap/backend:latest
+        command:
+        - sh
+        - -c
+        - alembic upgrade head
+        envFrom:
+        - configMapRef:
+            name: smartap-config
+        - secretRef:
+            name: smartap-secrets
+        env:
+        - name: DATABASE_URL
+          value: "postgresql+asyncpg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+      containers:
+      - name: backend
+        image: smartap/backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: smartap-config
+        - secretRef:
+            name: smartap-secrets
+        env:
+        - name: DATABASE_URL
+          value: "postgresql+asyncpg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)/$(REDIS_DB)"
+        - name: CELERY_BROKER_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)/1"
+        - name: CELERY_RESULT_BACKEND
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)/1"
+        volumeMounts:
+        - name: uploads-storage
+          mountPath: /app/data/uploads
+        - name: processed-storage
+          mountPath: /app/data/processed
+        - name: archival-storage
+          mountPath: /app/data/archival
+        - name: signed-storage
+          mountPath: /app/data/signed
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: uploads-storage
+        persistentVolumeClaim:
+          claimName: uploads-pvc
+      - name: processed-storage
+        persistentVolumeClaim:
+          claimName: processed-pvc
+      - name: archival-storage
+        persistentVolumeClaim:
+          claimName: archival-pvc
+      - name: signed-storage
+        persistentVolumeClaim:
+          claimName: signed-pvc

@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smartap-config
+  namespace: smartap
+  labels:
+    app: smartap
+data:
+  # Database Configuration
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "smartap"
+  DB_USER: "smartap"
+  
+  # Redis Configuration
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  
+  # Application Configuration
+  APP_NAME: "SmartAP"
+  APP_VERSION: "1.0.0"
+  APP_ENV: "production"
+  
+  # Server Configuration
+  HOST: "0.0.0.0"
+  PORT: "8000"
+  DEBUG: "false"
+  LOG_LEVEL: "info"
+  
+  # CORS Origins
+  CORS_ORIGINS: "http://localhost:3000,https://smartap.example.com"
+  
+  # AI Configuration
+  AI_PROVIDER: "github"
+  GITHUB_MODEL: "gpt-4o"
+  GITHUB_API_BASE: "https://models.inference.ai.azure.com"
+  MAX_TOKENS: "4000"
+  TEMPERATURE: "0.1"
+  TIMEOUT: "60"
+  
+  # Approval Workflow
+  AUTO_APPROVE_THRESHOLD: "1000.00"
+  REVIEW_REQUIRED_THRESHOLD: "10000.00"
+  EXECUTIVE_APPROVAL_THRESHOLD: "50000.00"
+  APPROVAL_TIMEOUT_HOURS: "48"
+  ENABLE_PARALLEL_APPROVALS: "false"
+  REQUIRE_PO_MATCH: "true"
+  
+  # File Storage
+  UPLOAD_DIR: "/app/data/uploads"
+  PROCESSED_DIR: "/app/data/processed"
+  ARCHIVAL_DIR: "/app/data/archival"
+  SIGNED_DIR: "/app/data/signed"
+  MAX_UPLOAD_SIZE: "10485760"
+  ALLOWED_EXTENSIONS: "pdf,png,jpg,jpeg,tiff"
+  
+  # Archival & Retention
+  INVOICE_RETENTION_DAYS: "2555"
+  AUDIT_LOG_RETENTION_DAYS: "2555"
+  TEMP_FILE_RETENTION_DAYS: "7"
+  ENABLE_AUTO_ARCHIVAL: "true"
+  ARCHIVAL_SCHEDULE: "0 2 * * *"
+  COMPRESS_ARCHIVED_FILES: "true"
+  
+  # Celery Configuration
+  CELERY_TASK_SERIALIZER: "json"
+  CELERY_RESULT_SERIALIZER: "json"
+  CELERY_ACCEPT_CONTENT: "json"
+  CELERY_TIMEZONE: "UTC"
+  CELERY_ENABLE_UTC: "true"
+  CELERY_TASK_SOFT_TIME_LIMIT: "300"
+  CELERY_TASK_TIME_LIMIT: "600"
+  CELERY_TASK_TRACK_STARTED: "true"
+  CELERY_TASK_ACKS_LATE: "true"
+  CELERY_WORKER_CONCURRENCY: "4"
+  CELERY_WORKER_PREFETCH_MULTIPLIER: "1"
+  CELERY_WORKER_MAX_TASKS_PER_CHILD: "1000"
+  
+  # Monitoring
+  LOG_FORMAT: "json"
+  LOG_FILE: "/app/logs/smartap.log"
+  LOG_ROTATION: "daily"
+  LOG_RETENTION_DAYS: "30"
+  ENABLE_METRICS: "true"
+  METRICS_PORT: "9090"
+  
+  # Security
+  JWT_ALGORITHM: "HS256"
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+  JWT_REFRESH_TOKEN_EXPIRE_DAYS: "7"
+  MIN_PASSWORD_LENGTH: "8"
+  REQUIRE_PASSWORD_COMPLEXITY: "true"
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_PER_MINUTE: "60"
+  RATE_LIMIT_BURST: "10"
+  ENABLE_HSTS: "true"
+  ENABLE_CSP: "true"
+  
+  # Feature Flags
+  ENABLE_FRAUD_DETECTION: "true"
+  ENABLE_PO_MATCHING: "true"
+  ENABLE_AUTO_APPROVAL: "true"
+  ENABLE_DIGITAL_SIGNATURES: "true"
+  ENABLE_ERP_SYNC: "true"
+  ENABLE_EMAIL_NOTIFICATIONS: "true"
+  
+  # Frontend Configuration
+  REACT_APP_API_URL: "http://backend-service:8000"
+  REACT_APP_APP_NAME: "SmartAP"
+  REACT_APP_VERSION: "1.0.0"

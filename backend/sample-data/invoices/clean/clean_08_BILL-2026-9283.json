@@ -1,0 +1,61 @@
+{
+  "invoice_number": "BILL-2026-9283",
+  "po_number": null,
+  "vendor": {
+    "name": "Professional Services Inc",
+    "address": "300 Service Ave, Miami, FL 33101",
+    "tax_id": "33-4455667"
+  },
+  "customer": {
+    "name": "Innovate Solutions",
+    "address": "321 Innovation Dr, Austin, TX 78701",
+    "tax_id": "67-8901234"
+  },
+  "invoice_date": "2025-10-25",
+  "due_date": "2025-11-24",
+  "currency": "JPY",
+  "line_items": [
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 4,
+      "unit_price": 799.99,
+      "total": 3199.96
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 8,
+      "unit_price": 899.99,
+      "total": 7199.92
+    },
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 8,
+      "unit_price": 99.99,
+      "total": 799.92
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 9,
+      "unit_price": 175.0,
+      "total": 1575.0
+    },
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 4,
+      "unit_price": 299.99,
+      "total": 1199.96
+    }
+  ],
+  "subtotal": 13974.76,
+  "tax_rate": 0.1,
+  "tax_amount": 1397.48,
+  "shipping": 0,
+  "total_amount": 15372.24,
+  "payment_terms": "Net 30",
+  "invoice_type": "international"
+}

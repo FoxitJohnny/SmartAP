@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: smartap-uploads-pvc
+  namespace: smartap
+  labels:
+    app: smartap
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods can read/write
+  storageClassName: standard  # Change based on your cluster (e.g., gp2, gp3 for AWS)
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: smartap-processed-pvc
+  namespace: smartap
+  labels:
+    app: smartap
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: smartap-logs-pvc
+  namespace: smartap
+  labels:
+    app: smartap
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# PostgreSQL PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: smartap
+  labels:
+    app: smartap
+    component: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 100Gi
+
+---
+# Redis PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: smartap
+  labels:
+    app: smartap
+    component: cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 10Gi

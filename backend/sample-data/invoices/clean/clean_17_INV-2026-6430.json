@@ -1,0 +1,61 @@
+{
+  "invoice_number": "INV-2026-6430",
+  "po_number": null,
+  "vendor": {
+    "name": "Office Supply Co",
+    "address": "100 Supply St, Denver, CO 80201",
+    "tax_id": "11-2233445"
+  },
+  "customer": {
+    "name": "Global Tech Inc",
+    "address": "456 Tech Ave, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "invoice_date": "2025-11-05",
+  "due_date": "2025-12-05",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 9,
+      "unit_price": 175.0,
+      "total": 1575.0
+    },
+    {
+      "description": "External SSD - 2TB",
+      "sku": "SSD-2TB-015",
+      "quantity": 6,
+      "unit_price": 299.99,
+      "total": 1799.94
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 10,
+      "unit_price": 899.99,
+      "total": 8999.9
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 2,
+      "unit_price": 449.99,
+      "total": 899.98
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 9,
+      "unit_price": 899.99,
+      "total": 8099.91
+    }
+  ],
+  "subtotal": 21374.73,
+  "tax_rate": 0.08,
+  "tax_amount": 1709.98,
+  "shipping": 15.0,
+  "total_amount": 23099.71,
+  "payment_terms": "Net 30",
+  "invoice_type": "product"
+}

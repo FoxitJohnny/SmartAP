@@ -1,0 +1,21 @@
+apiVersion: v2
+name: smartap
+description: A Helm chart for SmartAP - Intelligent Invoice & Accounts Payable Automation Hub
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - invoice
+  - accounts-payable
+  - ai
+  - automation
+  - ocr
+  - foxit
+home: https://github.com/yourusername/smartap
+sources:
+  - https://github.com/yourusername/smartap
+maintainers:
+  - name: SmartAP Team
+    email: support@smartap.example.com
+icon: https://smartap.example.com/logo.png
+dependencies: []

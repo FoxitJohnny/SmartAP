@@ -1,0 +1,62 @@
+{{- if .Values.worker.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "smartap.fullname" . }}-worker
+  labels:
+    {{- include "smartap.componentLabels" (dict "component" "worker" "root" .) | nindent 4 }}
+spec:
+  {{- if not .Values.worker.autoscaling.enabled }}
+  replicas: {{ .Values.worker.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "smartap.componentSelectorLabels" (dict "component" "worker" "root" .) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "smartap.componentSelectorLabels" (dict "component" "worker" "root" .) | nindent 8 }}
+    spec:
+      {{- include "smartap.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "smartap.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: worker
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: {{ include "smartap.image" (dict "registry" .Values.image.registry "repository" .Values.worker.image.repository "tag" (.Values.image.tag | default .Chart.AppVersion) "root" .) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["celery"]
+        args:
+          - "-A"
+          - "src.celery_app"
+          - "worker"
+          - "--loglevel=info"
+          - "--concurrency=$(CELERY_CONCURRENCY)"
+        envFrom:
+        - configMapRef:
+            name: {{ include "smartap.fullname" . }}-config
+        - secretRef:
+            name: {{ include "smartap.fullname" . }}-secret
+        env:
+        - name: CELERY_CONCURRENCY
+          value: {{ .Values.worker.env.CELERY_CONCURRENCY | quote }}
+        resources:
+          {{- toYaml .Values.worker.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

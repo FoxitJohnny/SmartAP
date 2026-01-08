@@ -1,0 +1,135 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
+  $ helm get all {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+{{- if .Values.ingress.enabled }}
+
+Your SmartAP instance will be available at:
+
+{{- range .Values.ingress.hosts }}
+  https://{{ .host }}
+{{- end }}
+
+{{- if not .Values.ingress.tls }}
+⚠️  WARNING: TLS is not enabled. Your traffic is not encrypted!
+{{- end }}
+
+{{- else }}
+
+To access SmartAP, you need to expose the nginx service:
+
+Option 1: Port-forward (for local testing)
+  $ kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "smartap.fullname" . }}-nginx 8080:80
+  Then visit: http://localhost:8080
+
+Option 2: Use LoadBalancer (if available)
+  $ kubectl get svc -n {{ .Release.Namespace }} {{ include "smartap.fullname" . }}-nginx
+  Wait for EXTERNAL-IP to be assigned, then visit that IP
+
+Option 3: Enable Ingress
+  Update values.yaml with:
+    ingress.enabled: true
+    ingress.hosts: [your-domain.com]
+  Then upgrade the release
+
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 Deployment Status
+
+Check if all pods are running:
+  $ kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+View logs:
+  Backend:    $ kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/component=backend --tail=50 -f
+  Frontend:   $ kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/component=frontend --tail=50 -f
+  Worker:     $ kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/component=worker --tail=50 -f
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚙️  Configuration
+
+Environment: {{ .Values.global.environment }}
+AI Provider: {{ .Values.config.aiProvider }}
+AI Model:    {{ .Values.config.aiModel }}
+
+{{- if not .Values.secrets.postgresPassword }}
+
+⚠️  WARNING: PostgreSQL password is not set!
+Please set secrets.postgresPassword in values.yaml or via --set
+
+{{- end }}
+
+{{- if not .Values.secrets.secretKey }}
+
+⚠️  WARNING: Application secret key is not set!
+Please set secrets.secretKey in values.yaml or via --set
+Generate one with: openssl rand -hex 32
+
+{{- end }}
+
+{{- if not .Values.secrets.foxitApiKey }}
+
+⚠️  WARNING: Foxit API key is not set!
+SmartAP requires a Foxit API key to function.
+Get your API key from: https://developers.foxit.com/
+Then set secrets.foxitApiKey in values.yaml or via --set
+
+{{- end }}
+
+{{- if eq .Values.config.aiProvider "openai" }}
+{{- if not .Values.secrets.openaiApiKey }}
+
+⚠️  WARNING: OpenAI API key is not set!
+You've configured OpenAI as your AI provider but haven't set the API key.
+Set secrets.openaiApiKey in values.yaml or via --set
+
+{{- end }}
+{{- end }}
+
+{{- if eq .Values.config.aiProvider "anthropic" }}
+{{- if not .Values.secrets.anthropicApiKey }}
+
+⚠️  WARNING: Anthropic API key is not set!
+You've configured Anthropic as your AI provider but haven't set the API key.
+Set secrets.anthropicApiKey in values.yaml or via --set
+
+{{- end }}
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 Documentation
+
+- Getting Started: https://github.com/yourusername/smartap/blob/main/README.md
+- Helm Chart:     https://github.com/yourusername/smartap/blob/main/helm/smartap/README.md
+- API Docs:       {{ .Values.config.appUrl }}/docs
+- Extensibility:  https://github.com/yourusername/smartap/blob/main/docs/Extensibility_Guide.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 Troubleshooting
+
+If pods are not starting:
+  $ kubectl describe pod -n {{ .Release.Namespace }} <pod-name>
+
+If database connection fails:
+  $ kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/component=backend | grep -i error
+
+Database migrations:
+  Migrations run automatically before install/upgrade.
+  Check migration logs: $ kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/component=migration
+
+For more help:
+  - GitHub Issues: https://github.com/yourusername/smartap/issues
+  - Email: support@smartap.example.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Happy invoice processing! 📄✨

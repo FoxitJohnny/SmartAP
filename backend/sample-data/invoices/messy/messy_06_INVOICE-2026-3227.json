@@ -1,0 +1,42 @@
+{
+  "invoice_number": "INVOICE-2026-3227",
+  "po_number": "ORDER-49775",
+  "vendor": {
+    "name": "Professional Services Inc",
+    "address": "300 Service Ave, Miami, FL 33101",
+    "tax_id": "33-4455667"
+  },
+  "customer": {
+    "name": "Acme Corp",
+    "address": "123 Main St, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "invoice_date": "2025-11-14",
+  "due_date": "2025-12-14",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 2,
+      "unit_price": 249.99,
+      "total": 499.98
+    },
+    {
+      "description": "External SSD - 2TB",
+      "sku": "SSD-2TB-015",
+      "quantity": 10,
+      "unit_price": 299.99,
+      "total": 2999.9
+    }
+  ],
+  "subtotal": 3499.88,
+  "tax_rate": 0.08,
+  "tax_amount": 279.99,
+  "shipping": 0,
+  "total_amount": 3779.87,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

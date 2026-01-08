@@ -1,0 +1,47 @@
+{
+  "invoice_number": "NO-2025-2416",
+  "po_number": "P-68657",
+  "vendor": {
+    "name": "Marketing Agency Pro",
+    "address": "500 Marketing Way, Los Angeles, CA 90001",
+    "tax_id": "55-6677889"
+  },
+  "customer": {
+    "name": "Global Tech Inc",
+    "address": "456 Tech Ave, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "invoice_date": "2025-10-13",
+  "due_date": "2025-11-12",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 4,
+      "unit_price": 99.99,
+      "total": 399.96
+    },
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 5,
+      "unit_price": 299.99,
+      "total": 1499.95
+    },
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 2,
+      "unit_price": 99.99,
+      "total": 199.98
+    }
+  ],
+  "subtotal": 2099.89,
+  "tax_rate": 0.08,
+  "tax_amount": 167.99,
+  "shipping": 0,
+  "total_amount": 2267.88,
+  "payment_terms": "Net 30",
+  "invoice_type": "us_standard"
+}

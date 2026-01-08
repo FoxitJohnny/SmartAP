@@ -1,0 +1,328 @@
+Below is a **production-grade implementation plan** for the **Intelligent Invoice & Accounts Payable (AP) Automation Hub**, written at a level suitable for **Foxit R&D / Architecture / OSS leadership review**.
+
+This is **not** a PoC plan — it is designed to move from **sample code → real business system** with measurable ROI.
+
+---
+
+# Intelligent Invoice & Accounts Payable (AP) Automation Hub
+
+**Priority:** High
+**Target Users:** Finance & Operations (SME → Mid-Market)
+**Core Value:** Eliminate manual invoice processing while maintaining auditability and control
+
+---
+
+## 1. System Objectives (Clear Success Criteria)
+
+### Business Objectives
+
+* Reduce invoice processing time by **60–80%**
+* Achieve **>90% straight-through processing (STP)** for clean invoices
+* Detect duplicate or fraudulent invoices **before payment**
+* Provide **full audit trail** for compliance
+
+### Technical Objectives
+
+* Demonstrate **Foxit PDF Services + AI as a production workflow**
+* Use **agentic AI**, not a monolithic prompt
+* Be **LLM-provider agnostic**
+* Be deployable on-prem or cloud
+
+---
+
+## 2. High-Level Architecture
+
+```
+┌────────────┐
+│ Web Portal │  React / Next.js
+└─────┬──────┘
+      │
+┌─────▼──────────────────────────┐
+│ Backend API (FastAPI /.NET)     │
+│ - Auth & RBAC                   │
+│ - Workflow Orchestration        │
+│ - Audit Logging                 │
+└─────┬──────────────────────────┘
+      │
+┌─────▼───────────────────────────────┐
+│ AI Orchestration Layer               │
+│ (Agent Router / State Machine)       │
+├──────────────┬───────────────┬──────┤
+│ Extraction   │ Matching      │ Risk │
+│ Agent        │ Agent         │ Agent│
+└─────┬────────┴───────┬───────┴──────┘
+      │                │
+┌─────▼───────┐  ┌─────▼─────────┐
+│ Foxit APIs  │  │ Business Data │
+│ - OCR       │  │ - PO DB       │
+│ - Extract   │  │ - Vendor DB   │
+│ - Flatten   │  │ - Payment Sys │
+└─────────────┘  └────────────────┘
+```
+
+---
+
+## 3. Core Functional Modules
+
+### 3.1 Invoice Ingestion & Preprocessing
+
+**Features**
+
+* Upload PDF (digital or scanned)
+* Email ingestion ([invoice@company.com](mailto:invoice@company.com))
+* Batch upload (zip)
+
+**Foxit API Usage**
+
+* OCR for scanned invoices
+* PDF normalization
+* Page & layout analysis
+
+**Outputs**
+
+* Machine-readable PDF
+* OCR confidence score
+* Immutable document hash (for duplication detection)
+
+---
+
+### 3.2 AI Agent 1 — Invoice Extraction Agent
+
+**Role**
+Extract structured invoice data from PDFs **without templates**.
+
+**Inputs**
+
+* OCR’d PDF
+* Vendor master data (optional)
+
+**Outputs (JSON)**
+
+```json
+{
+  "invoice_number": "INV-2025-0312",
+  "vendor": "ABC Supplies Ltd",
+  "invoice_date": "2026-01-12",
+  "currency": "EUR",
+  "line_items": [
+    { "description": "Laptop", "qty": 5, "unit_price": 850 }
+  ],
+  "subtotal": 4250,
+  "tax": 850,
+  "total": 5100
+}
+```
+
+**AI Techniques**
+
+* Zero-shot structured extraction
+* Self-consistency checks (sum of line items vs total)
+* Confidence scoring per field
+
+**Human-in-the-loop**
+
+* Foxit Web Viewer shows extracted fields side-by-side with PDF
+* Editable before confirmation
+
+---
+
+### 3.3 AI Agent 2 — PO Matching & Reconciliation Agent
+
+**Role**
+Match invoice data against Purchase Orders and receipts.
+
+**Matching Logic**
+
+* Exact match: PO number
+* Fuzzy match: vendor + amount + date
+* Line-item similarity scoring
+
+**Outputs**
+
+```json
+{
+  "po_id": "PO-88421",
+  "match_score": 0.93,
+  "discrepancies": [
+    {
+      "type": "PRICE",
+      "item": "Laptop",
+      "invoice_price": 850,
+      "po_price": 820
+    }
+  ]
+}
+```
+
+**Business Rules**
+
+* Tolerance thresholds (e.g. ±2%)
+* Partial delivery handling
+* Multi-PO invoices
+
+---
+
+### 3.4 AI Agent 3 — Risk, Fraud & Duplication Agent
+
+**Role**
+Flag anomalies **before payment approval**.
+
+**Signals**
+
+* Duplicate invoice number + vendor
+* Similar totals across different invoices
+* Unusual price deviations
+* Vendor risk profile
+
+**AI Techniques**
+
+* Embedding-based similarity search
+* Rule + AI hybrid scoring
+* Historical vendor behavior analysis
+
+**Risk Output**
+
+```json
+{
+  "risk_level": "MEDIUM",
+  "flags": ["DUPLICATE_LIKE", "PRICE_SPIKE"],
+  "recommended_action": "MANUAL_REVIEW"
+}
+```
+
+---
+
+### 3.5 Approval Workflow & Payment Preparation
+
+**Workflow States**
+
+```
+INGESTED → EXTRACTED → MATCHED → RISK_REVIEW
+→ APPROVED → READY_FOR_PAYMENT → ARCHIVED
+```
+
+**Features**
+
+* Role-based approvals
+* Escalation rules
+* SLA timers
+
+**Foxit API Usage**
+
+* PDF flattening after approval
+* Final archival PDF with metadata
+* Optional eSign for approval sign-off
+
+---
+
+## 4. Data Model (Core Entities)
+
+| Entity          | Description              |
+| --------------- | ------------------------ |
+| Invoice         | Canonical invoice record |
+| InvoiceLineItem | Normalized line items    |
+| PurchaseOrder   | PO master                |
+| Vendor          | Vendor profile           |
+| RiskAssessment  | AI-generated risk report |
+| AuditLog        | Immutable action trail   |
+
+---
+
+## 5. Security & Compliance (Non-Negotiable)
+
+* RBAC (AP Clerk, Manager, Auditor)
+* Full audit trail (who approved what, when)
+* Immutable PDFs after approval
+* GDPR-ready data handling
+* Optional on-prem deployment
+
+---
+
+## 6. Phased Implementation Plan
+
+### Phase 1 — MVP (8–10 weeks)
+
+**Goal:** End-to-end happy path
+
+* Invoice upload
+* OCR + extraction agent
+* Manual PO matching
+* Approval workflow
+* PDF archival
+
+**Deliverable**
+
+> “Process a clean invoice with zero manual data entry.”
+
+---
+
+### Phase 2 — Agentic Automation (6–8 weeks)
+
+* PO matching agent
+* Risk & duplication agent
+* Confidence scoring
+* Exception queues
+
+**Deliverable**
+
+> “80% of invoices auto-approved.”
+
+---
+
+### Phase 3 — Enterprise-Ready (6 weeks)
+
+* ERP connectors (NetSuite, SAP via CSV/API)
+* Email ingestion
+* Batch processing
+* Dashboard & KPIs
+
+**Deliverable**
+
+> “Drop-in AP automation system.”
+
+---
+
+### Phase 4 — OSS Polish & Ecosystem (4 weeks)
+
+* Sample datasets
+* Docker / Helm charts
+* Clear Foxit API integration guides
+* Extensible agent interfaces
+
+---
+
+## 7. Why This Is a Strong Foxit OSS Flagship
+
+✅ PDF-native workflow (Foxit’s core strength)
+✅ Clear ROI story for sales & partners
+✅ Demonstrates **AI + human control**
+✅ Reusable foundation for:
+
+* Expense management
+* Procurement
+* AR automation
+
+---
+
+## 8. Recommended Repo Name
+
+```
+foxit-ap-automation-hub
+```
+
+Tagline:
+
+> **“An open-source, AI-powered Accounts Payable system built on Foxit PDF Services.”**
+
+---
+
+## Next Step (Strong Recommendation)
+
+If you want this to land well internally, the **next artifact** should be **one of these**:
+
+1. **Agent interaction diagram + state machine**
+2. **AI extraction prompt + validation strategy**
+3. **Foxit API integration code skeleton**
+4. **Demo dataset + success metrics**
+
+Tell me which one you want next, and I’ll go deep on it.

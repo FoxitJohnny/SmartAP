@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  # SmartAP Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartap-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Application
+      - APP_NAME=SmartAP
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      
+      # Database
+      - DATABASE_URL=postgresql+asyncpg://smartap:smartap123@postgres:5432/smartap
+      - DATABASE_POOL_SIZE=10
+      - DATABASE_POOL_MAX_OVERFLOW=20
+      
+      # Redis Cache
+      - REDIS_ENABLED=true
+      - REDIS_URL=redis://redis:6379/0
+      - CACHE_TTL_SECONDS=3600
+      
+      # AI Configuration (use your own tokens)
+      - AI_PROVIDER=github
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - MODEL_ID=openai/gpt-4.1
+    volumes:
+      - ./uploads:/app/uploads
+      - ./processed:/app/processed
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - smartap-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: smartap-postgres
+    environment:
+      - POSTGRES_USER=smartap
+      - POSTGRES_PASSWORD=smartap123
+      - POSTGRES_DB=smartap
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - smartap-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartap"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: smartap-redis
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - smartap-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin (optional - for database management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: smartap-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@smartap.local
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - smartap-network
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+  # Redis Commander (optional - for Redis management)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: smartap-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - smartap-network
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+networks:
+  smartap-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local

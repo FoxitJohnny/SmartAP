@@ -1,0 +1,54 @@
+{
+  "invoice_number": "SI-2025-3469",
+  "po_number": "ORDER-68490",
+  "vendor": {
+    "name": "Marketing Agency Pro",
+    "address": "500 Marketing Way, Los Angeles, CA 90001",
+    "tax_id": "55-6677889"
+  },
+  "customer": {
+    "name": "Enterprise Systems",
+    "address": "654 Enterprise Way, Boston, MA 02101",
+    "tax_id": "23-4567890"
+  },
+  "invoice_date": "2025-11-15",
+  "due_date": "2025-12-15",
+  "currency": "JPY",
+  "line_items": [
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 5,
+      "unit_price": 249.99,
+      "total": 1249.95
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 8,
+      "unit_price": 449.99,
+      "total": 3599.92
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 8,
+      "unit_price": 175.0,
+      "total": 1400.0
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 3,
+      "unit_price": 175.0,
+      "total": 525.0
+    }
+  ],
+  "subtotal": 6774.87,
+  "tax_rate": 0.1,
+  "tax_amount": 677.49,
+  "shipping": 0,
+  "total_amount": 7452.36,
+  "payment_terms": "Net 30",
+  "invoice_type": "duplicate"
+}

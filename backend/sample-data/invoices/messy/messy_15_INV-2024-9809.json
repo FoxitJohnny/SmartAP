@@ -1,0 +1,63 @@
+{
+  "invoice_number": "INV-2024-9809",
+  "po_number": "P-46374",
+  "vendor": {
+    "name": "Marketing Agency Pro",
+    "address": "500 Marketing Way, Los Angeles, CA 90001",
+    "tax_id": "55-6677889"
+  },
+  "customer": {
+    "name": "Enterprise Systems",
+    "address": "654 Enterprise Way, Boston, MA 02101",
+    "tax_id": "23-4567890"
+  },
+  "invoice_date": "2025-11-24",
+  "due_date": "2025-12-24",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 2,
+      "unit_price": 175.0,
+      "total": 350.0
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 7,
+      "unit_price": 175.0,
+      "total": 1225.0
+    },
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 10,
+      "unit_price": 599.99,
+      "total": 5999.9
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 1,
+      "unit_price": 499.99,
+      "total": 499.99
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 9,
+      "unit_price": 1299.99,
+      "total": 11699.91
+    }
+  ],
+  "subtotal": 19774.8,
+  "tax_rate": 0.08,
+  "tax_amount": 1581.98,
+  "shipping": 0,
+  "total_amount": 21356.78,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

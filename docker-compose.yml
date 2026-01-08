@@ -1,0 +1,239 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: smartap-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smartap
+      POSTGRES_USER: smartap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartap_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartap"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartap-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: smartap-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartap-network
+
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartap-backend
+    restart: unless-stopped
+    environment:
+      # Database
+      DATABASE_URL: postgresql+asyncpg://smartap:${POSTGRES_PASSWORD:-smartap_dev_password}@db:5432/smartap
+      DATABASE_POOL_SIZE: 10
+      DATABASE_POOL_MAX_OVERFLOW: 20
+      
+      # Redis
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379/0
+      CACHE_TTL_SECONDS: 3600
+      
+      # API Configuration
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      DEBUG: ${DEBUG:-false}
+      
+      # AI Model Configuration
+      AI_PROVIDER: ${AI_PROVIDER:-github}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      MODEL_ID: ${MODEL_ID:-openai/gpt-4.1}
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-https://models.github.ai/inference}
+      
+      # Foxit API Configuration
+      FOXIT_API_KEY: ${FOXIT_API_KEY}
+      FOXIT_API_ENDPOINT: ${FOXIT_API_ENDPOINT}
+      
+      # Foxit eSign Configuration
+      FOXIT_ESIGN_API_KEY: ${FOXIT_ESIGN_API_KEY}
+      FOXIT_ESIGN_API_SECRET: ${FOXIT_ESIGN_API_SECRET}
+      FOXIT_ESIGN_BASE_URL: ${FOXIT_ESIGN_BASE_URL:-https://api.foxitsign.com/v2.0}
+      
+      # Approval Workflow Configuration
+      APPROVAL_LEVEL1_MAX: ${APPROVAL_LEVEL1_MAX:-100000}
+      APPROVAL_LEVEL2_MAX: ${APPROVAL_LEVEL2_MAX:-500000}
+      APPROVAL_ESIGN_THRESHOLD: ${APPROVAL_ESIGN_THRESHOLD:-500000}
+      
+      # Archival Configuration
+      ARCHIVAL_STORAGE_PATH: /app/archival
+      ARCHIVAL_RETENTION_YEARS: ${ARCHIVAL_RETENTION_YEARS:-7}
+      ARCHIVAL_ENABLE_CLOUD_BACKUP: ${ARCHIVAL_ENABLE_CLOUD_BACKUP:-false}
+      
+      # ERP Integration
+      ERP_SYNC_ENABLED: ${ERP_SYNC_ENABLED:-true}
+      QUICKBOOKS_CLIENT_ID: ${QUICKBOOKS_CLIENT_ID}
+      QUICKBOOKS_CLIENT_SECRET: ${QUICKBOOKS_CLIENT_SECRET}
+      XERO_CLIENT_ID: ${XERO_CLIENT_ID}
+      XERO_CLIENT_SECRET: ${XERO_CLIENT_SECRET}
+      SAP_SERVICE_LAYER_URL: ${SAP_SERVICE_LAYER_URL}
+      NETSUITE_ACCOUNT_ID: ${NETSUITE_ACCOUNT_ID}
+      NETSUITE_CONSUMER_KEY: ${NETSUITE_CONSUMER_KEY}
+      NETSUITE_CONSUMER_SECRET: ${NETSUITE_CONSUMER_SECRET}
+      
+      # Storage Paths
+      UPLOAD_DIR: /app/uploads
+      PROCESSED_DIR: /app/processed
+      SIGNED_DIR: /app/signed
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - uploads_data:/app/uploads
+      - processed_data:/app/processed
+      - archival_data:/app/archival
+      - signed_data:/app/signed
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - smartap-network
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000}
+    container_name: smartap-frontend
+    restart: unless-stopped
+    environment:
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
+      REACT_APP_FOXIT_LICENSE_KEY: ${REACT_APP_FOXIT_LICENSE_KEY}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - smartap-network
+
+  # Nginx Reverse Proxy (Optional - for production)
+  nginx:
+    image: nginx:alpine
+    container_name: smartap-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - smartap-network
+    profiles:
+      - production
+
+  # Worker Service for Background Jobs (Optional)
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartap-worker
+    restart: unless-stopped
+    command: celery -A src.celery_app worker --loglevel=info
+    environment:
+      DATABASE_URL: postgresql://smartap:${POSTGRES_PASSWORD:-smartap_dev_password}@db:5432/smartap
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    volumes:
+      - ./backend:/app
+      - uploads_data:/app/uploads
+      - processed_data:/app/processed
+      - archival_data:/app/archival
+    depends_on:
+      - db
+      - redis
+    networks:
+      - smartap-network
+    profiles:
+      - production
+
+  # Celery Beat Scheduler (Optional)
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartap-scheduler
+    restart: unless-stopped
+    command: celery -A src.celery_app beat --loglevel=info
+    environment:
+      DATABASE_URL: postgresql://smartap:${POSTGRES_PASSWORD:-smartap_dev_password}@db:5432/smartap
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      - db
+      - redis
+    networks:
+      - smartap-network
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  uploads_data:
+    driver: local
+  processed_data:
+    driver: local
+  archival_data:
+    driver: local
+  signed_data:
+    driver: local
+
+networks:
+  smartap-network:
+    driver: bridge

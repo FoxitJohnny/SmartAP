@@ -1,0 +1,153 @@
+# Staging environment overrides for SmartAP Helm chart
+# Usage: helm install smartap ./helm/smartap -f ./helm/smartap/values-staging.yaml
+
+global:
+  environment: staging
+  domain: staging.smartap.example.com
+
+# Moderate replicas for staging
+backend:
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+  resources:
+    requests:
+      memory: "384Mi"
+      cpu: "375m"
+    limits:
+      memory: "1536Mi"
+      cpu: "1500m"
+  env:
+    APP_ENV: staging
+    LOG_LEVEL: INFO
+    WORKERS: "3"
+
+frontend:
+  replicaCount: 1
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+  resources:
+    requests:
+      memory: "192Mi"
+      cpu: "200m"
+    limits:
+      memory: "384Mi"
+      cpu: "750m"
+  env:
+    NODE_ENV: production
+
+nginx:
+  replicaCount: 1
+  service:
+    type: LoadBalancer
+  resources:
+    requests:
+      memory: "96Mi"
+      cpu: "75m"
+    limits:
+      memory: "192Mi"
+      cpu: "375m"
+
+postgresql:
+  persistence:
+    enabled: true
+    size: 5Gi
+  resources:
+    requests:
+      memory: "384Mi"
+      cpu: "375m"
+    limits:
+      memory: "1536Mi"
+      cpu: "1500m"
+
+redis:
+  persistence:
+    enabled: true
+    size: 3Gi
+  resources:
+    requests:
+      memory: "192Mi"
+      cpu: "200m"
+    limits:
+      memory: "768Mi"
+      cpu: "750m"
+
+worker:
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+  resources:
+    requests:
+      memory: "384Mi"
+      cpu: "375m"
+    limits:
+      memory: "1536Mi"
+      cpu: "1500m"
+  env:
+    CELERY_CONCURRENCY: "3"
+
+scheduler:
+  resources:
+    requests:
+      memory: "192Mi"
+      cpu: "200m"
+    limits:
+      memory: "384Mi"
+      cpu: "375m"
+
+# Enable ingress for staging
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"  # Use staging cert
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+  hosts:
+    - host: staging.smartap.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            serviceName: nginx
+            servicePort: 80
+  tls:
+    - secretName: smartap-staging-tls
+      hosts:
+        - staging.smartap.example.com
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Staging secrets (MUST BE OVERRIDDEN via secure method)
+secrets:
+  postgresPassword: ""  # Required: Set via --set or sealed-secrets
+  redisPassword: ""
+  secretKey: ""  # Required
+  jwtSecret: ""  # Required
+  foxitApiKey: ""  # Required
+  openaiApiKey: ""  # Optional
+  anthropicApiKey: ""  # Optional
+  smtpPassword: ""
+
+config:
+  appName: "SmartAP (Staging)"
+  appUrl: "https://staging.smartap.example.com"
+  databaseUrl: "postgresql://smartap:$(POSTGRES_PASSWORD)@postgresql:5432/smartap"
+  corsOrigins: '["https://staging.smartap.example.com"]'
+  logLevel: "INFO"
+  logFormat: "json"
+  aiProvider: "openai"
+  aiModel: "gpt-4o"
+  aiTemperature: "0.1"
+  smtpHost: "smtp.example.com"
+  smtpPort: "587"
+  smtpUser: "noreply@smartap.example.com"
+  smtpFrom: "noreply@smartap.example.com"
+  smtpUseTls: "true"

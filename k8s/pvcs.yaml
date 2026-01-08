@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: smartap
+  labels:
+    app: redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # storageClassName: standard  # Uncomment and set for specific storage class
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uploads-pvc
+  namespace: smartap
+  labels:
+    app: backend
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods need access
+  resources:
+    requests:
+      storage: 50Gi
+  # storageClassName: azurefile  # Use Azure Files or NFS for ReadWriteMany
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: processed-pvc
+  namespace: smartap
+  labels:
+    app: backend
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  # storageClassName: azurefile
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: archival-pvc
+  namespace: smartap
+  labels:
+    app: backend
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  # storageClassName: azurefile
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: signed-pvc
+  namespace: smartap
+  labels:
+    app: backend
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+  # storageClassName: azurefile

@@ -1,0 +1,51 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: smartap-api-hpa
+  namespace: smartap
+  labels:
+    app: smartap
+    component: api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: smartap-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  # CPU-based scaling
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Scale when avg CPU > 70%
+  # Memory-based scaling
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # Scale when avg memory > 80%
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 min before scaling down
+      policies:
+      - type: Percent
+        value: 50  # Scale down by max 50% of current replicas
+        periodSeconds: 60
+      - type: Pods
+        value: 2  # Or max 2 pods at a time
+        periodSeconds: 60
+      selectPolicy: Min  # Use the policy that scales down least aggressively
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately
+      policies:
+      - type: Percent
+        value: 100  # Double the replicas
+        periodSeconds: 30
+      - type: Pods
+        value: 4  # Or add max 4 pods at a time
+        periodSeconds: 30
+      selectPolicy: Max  # Use the policy that scales up most aggressively

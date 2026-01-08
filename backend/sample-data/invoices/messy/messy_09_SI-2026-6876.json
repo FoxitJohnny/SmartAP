@@ -1,0 +1,56 @@
+{
+  "invoice_number": "SI-2026-6876",
+  "po_number": "ORDER-33793",
+  "vendor": {
+    "name": "Tech Equipment Ltd",
+    "address": "200 Tech Rd, Seattle, WA 98101",
+    "tax_id": "22-3344556"
+  },
+  "customer": {
+    "name": "Acme Corp",
+    "address": "123 Main St, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "invoice_date": "2026-01-01",
+  "due_date": "2026-01-31",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 9,
+      "unit_price": 899.99,
+      "total": 8099.91
+    },
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 3,
+      "unit_price": 99.99,
+      "total": 299.96999999999997
+    },
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 6,
+      "unit_price": 99.99,
+      "total": 599.9399999999999
+    },
+    {
+      "description": "Wireless Mouse",
+      "sku": "MOU-WL-005",
+      "quantity": 4,
+      "unit_price": 29.99,
+      "total": 119.96
+    }
+  ],
+  "subtotal": 9119.78,
+  "tax_rate": 0.08,
+  "tax_amount": 729.58,
+  "shipping": 0,
+  "total_amount": 9849.36,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

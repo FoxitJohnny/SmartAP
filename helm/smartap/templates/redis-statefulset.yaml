@@ -1,0 +1,98 @@
+{{- if .Values.redis.enabled -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "smartap.fullname" . }}-redis
+  labels:
+    {{- include "smartap.componentLabels" (dict "component" "redis" "root" .) | nindent 4 }}
+spec:
+  serviceName: {{ include "smartap.fullname" . }}-redis
+  replicas: {{ .Values.redis.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "smartap.componentSelectorLabels" (dict "component" "redis" "root" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "smartap.componentSelectorLabels" (dict "component" "redis" "root" .) | nindent 8 }}
+    spec:
+      {{- include "smartap.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "smartap.serviceAccountName" . }}
+      securityContext:
+        fsGroup: 999
+        runAsUser: 999
+        runAsNonRoot: true
+      containers:
+      - name: redis
+        image: {{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - redis-server
+          - --appendonly
+          - "yes"
+          {{- if .Values.secrets.redisPassword }}
+          - --requirepass
+          - $(REDIS_PASSWORD)
+          {{- end }}
+        ports:
+        - name: redis
+          containerPort: {{ .Values.redis.service.targetPort }}
+          protocol: TCP
+        {{- if .Values.secrets.redisPassword }}
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "smartap.fullname" . }}-secret
+              key: REDIS_PASSWORD
+        {{- end }}
+        livenessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 5
+        readinessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
+          failureThreshold: 3
+        resources:
+          {{- toYaml .Values.redis.resources | nindent 12 }}
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.redis.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - {{ .Values.redis.persistence.accessMode }}
+      {{- if .Values.redis.persistence.storageClass }}
+      storageClassName: {{ .Values.redis.persistence.storageClass | quote }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.redis.persistence.size }}
+  {{- else }}
+  volumes:
+  - name: data
+    emptyDir: {}
+  {{- end }}
+{{- end }}

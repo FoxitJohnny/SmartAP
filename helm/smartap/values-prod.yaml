@@ -1,0 +1,196 @@
+# Production environment overrides for SmartAP Helm chart
+# Usage: helm install smartap ./helm/smartap -f ./helm/smartap/values-prod.yaml
+
+global:
+  environment: production
+  domain: smartap.example.com
+
+# Full replicas for production
+backend:
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "2000m"
+  env:
+    APP_ENV: production
+    LOG_LEVEL: INFO
+    WORKERS: "4"
+
+frontend:
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "1000m"
+  env:
+    NODE_ENV: production
+
+nginx:
+  replicaCount: 2
+  service:
+    type: LoadBalancer
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+
+postgresql:
+  replicaCount: 1
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"  # Use fast storage in prod
+    size: 20Gi
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "4000m"
+  # Consider using managed database (AWS RDS, Azure Database, etc.) in production
+  # Set external database URL in config.databaseUrl if using managed service
+
+redis:
+  replicaCount: 1
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 10Gi
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "2000m"
+  # Consider using managed Redis (ElastiCache, Azure Cache, etc.) in production
+
+worker:
+  replicaCount: 5
+  autoscaling:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 30
+    targetCPUUtilizationPercentage: 70
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "2000m"
+  env:
+    CELERY_CONCURRENCY: "4"
+
+scheduler:
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Production ingress with Let's Encrypt
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: smartap.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            serviceName: nginx
+            servicePort: 80
+  tls:
+    - secretName: smartap-prod-tls
+      hosts:
+        - smartap.example.com
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Production secrets - CRITICAL: DO NOT commit actual values
+# Use one of these methods:
+# 1. helm install --set secrets.postgresPassword=$DB_PASS ...
+# 2. Sealed Secrets (recommended): https://github.com/bitnami-labs/sealed-secrets
+# 3. External Secrets Operator: https://external-secrets.io/
+# 4. HashiCorp Vault integration
+secrets:
+  postgresPassword: ""  # REQUIRED: Set via secure method
+  redisPassword: ""     # REQUIRED: Set via secure method
+  secretKey: ""         # REQUIRED: Generate with: openssl rand -hex 32
+  jwtSecret: ""         # REQUIRED: Generate with: openssl rand -hex 32
+  foxitApiKey: ""       # REQUIRED: Get from Foxit
+  openaiApiKey: ""      # OPTIONAL: Set if using OpenAI
+  anthropicApiKey: ""   # OPTIONAL: Set if using Anthropic
+  smtpPassword: ""      # OPTIONAL: Set if using SMTP
+
+config:
+  appName: "SmartAP"
+  appUrl: "https://smartap.example.com"
+  databaseUrl: "postgresql://smartap:$(POSTGRES_PASSWORD)@postgresql:5432/smartap"
+  corsOrigins: '["https://smartap.example.com"]'
+  logLevel: "INFO"
+  logFormat: "json"
+  aiProvider: "openai"
+  aiModel: "gpt-4o"
+  aiTemperature: "0.1"
+  smtpHost: "smtp.example.com"
+  smtpPort: "587"
+  smtpUser: "noreply@smartap.example.com"
+  smtpFrom: "SmartAP <noreply@smartap.example.com>"
+  smtpUseTls: "true"
+
+# Production-grade affinity rules
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - smartap
+          topologyKey: kubernetes.io/hostname
+
+# Enable network policies in production
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress

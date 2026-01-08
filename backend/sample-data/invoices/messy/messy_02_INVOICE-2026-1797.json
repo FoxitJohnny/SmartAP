@@ -1,0 +1,56 @@
+{
+  "invoice_number": "INVOICE-2026-1797",
+  "po_number": "PO-39458",
+  "vendor": {
+    "name": "Professional Services Inc",
+    "address": "300 Service Ave, Miami, FL 33101",
+    "tax_id": "33-4455667"
+  },
+  "customer": {
+    "name": "Innovate Solutions",
+    "address": "321 Innovation Dr, Austin, TX 78701",
+    "tax_id": "67-8901234"
+  },
+  "invoice_date": "2025-11-07",
+  "due_date": "2025-12-07",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Webcam - 4K HD",
+      "sku": "WEB-4K-013",
+      "quantity": 3,
+      "unit_price": 129.99,
+      "total": 389.97
+    },
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 4,
+      "unit_price": 149.99,
+      "total": 599.96
+    },
+    {
+      "description": "Webcam - 4K HD",
+      "sku": "WEB-4K-013",
+      "quantity": 10,
+      "unit_price": 129.99,
+      "total": 1299.9
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 4,
+      "unit_price": 175.0,
+      "total": 700.0
+    }
+  ],
+  "subtotal": 2989.83,
+  "tax_rate": 0.08,
+  "tax_amount": 239.19,
+  "shipping": 25.0,
+  "total_amount": 3254.02,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

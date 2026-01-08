@@ -1,0 +1,63 @@
+{
+  "invoice_number": "INV-2025-4941",
+  "po_number": "P-90775",
+  "vendor": {
+    "name": "Professional Services Inc",
+    "address": "300 Service Ave, Miami, FL 33101",
+    "tax_id": "33-4455667"
+  },
+  "customer": {
+    "name": "Global Tech Inc",
+    "address": "456 Tech Ave, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "invoice_date": "2025-10-27",
+  "due_date": "2025-11-26",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Wireless Mouse",
+      "sku": "MOU-WL-005",
+      "quantity": 4,
+      "unit_price": 29.99,
+      "total": 119.96
+    },
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 4,
+      "unit_price": 99.99,
+      "total": 399.96
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 3,
+      "unit_price": 449.99,
+      "total": 1349.97
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 3,
+      "unit_price": 899.99,
+      "total": 2699.9700000000003
+    },
+    {
+      "description": "External SSD - 2TB",
+      "sku": "SSD-2TB-015",
+      "quantity": 5,
+      "unit_price": 299.99,
+      "total": 1499.95
+    }
+  ],
+  "subtotal": 6069.81,
+  "tax_rate": 0.08,
+  "tax_amount": 485.58,
+  "shipping": 0,
+  "total_amount": 6555.39,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

@@ -1,0 +1,227 @@
+{
+	"info": {
+		"_postman_id": "smartap-api-collection",
+		"name": "SmartAP API",
+		"description": "Complete API collection for SmartAP - Intelligent Invoice & Accounts Payable Automation\n\n**Features:**\n- PDF invoice upload and AI extraction\n- PO matching with AI assistance\n- Risk assessment and fraud detection\n- Multi-agent workflow orchestration\n- Complete processing pipeline\n\n**Quick Start:**\n1. Start the API: `uvicorn src.main:app --reload`\n2. Update `baseUrl` variable if needed (default: http://localhost:8000)\n3. Run requests in order for typical workflow\n\n**Typical Workflow:**\n1. Health Check\n2. Upload Invoice (get document_id)\n3. Process Invoice (complete orchestration)\n4. Get Status (check progress)\n5. Optional: Match or Assess-Risk individually",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "document_id",
+			"value": "doc-12345",
+			"type": "string"
+		},
+		{
+			"key": "vendor_id",
+			"value": "V001",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/health",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "health"]
+				},
+				"description": "Check if the API is running and healthy.\n\n**Expected Response:**\n```json\n{\n  \"status\": \"healthy\",\n  \"service\": \"smartap-api\",\n  \"version\": \"0.1.0\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "Upload Invoice",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Extract document_id from response and save to collection variable",
+							"if (pm.response.code === 200) {",
+							"    const jsonData = pm.response.json();",
+							"    if (jsonData.document_id) {",
+							"        pm.collectionVariables.set('document_id', jsonData.document_id);",
+							"        console.log('Saved document_id: ' + jsonData.document_id);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "sample_invoice.pdf",
+							"description": "PDF invoice file (max 10MB)"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/invoices/upload",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "invoices", "upload"]
+				},
+				"description": "Upload a PDF invoice and extract structured data using AI.\n\n**Steps:**\n1. Select a PDF file in the request body\n2. Send the request\n3. The `document_id` is automatically saved to collection variables\n\n**Returns:**\n- document_id\n- Extracted invoice data (vendor, amounts, dates, line items)\n- Confidence scores\n- Status\n\n**Note:** Replace `sample_invoice.pdf` with your actual PDF file path."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Invoice by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/invoices/{{document_id}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "invoices", "{{document_id}}"]
+				},
+				"description": "Retrieve extracted invoice data by document ID.\n\n**Uses:** `{{document_id}}` variable (auto-set after upload)\n\n**Returns:**\n- Complete extraction result\n- Invoice fields (vendor, amounts, dates, line items)\n- Confidence scores\n- Status"
+			},
+			"response": []
+		},
+		{
+			"name": "Match Invoice to PO",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/invoices/{{document_id}}/match?use_ai=true",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "invoices", "{{document_id}}", "match"],
+					"query": [
+						{
+							"key": "use_ai",
+							"value": "true",
+							"description": "Use AI for ambiguous matches (true) or pure algorithmic matching (false)"
+						}
+					]
+				},
+				"description": "Match invoice to purchase order with optional AI assistance.\n\n**Query Parameters:**\n- `use_ai` (boolean): Enable AI agent for complex matching scenarios\n  - `true` (default): AI resolves ambiguous cases\n  - `false`: Pure algorithmic matching (faster)\n\n**Returns:**\n- Match score (0-1)\n- Match type (exact, partial, none)\n- Matched PO number\n- Discrepancies list\n- Approval recommendation\n\n**Score Guide:**\n- 0.95+: Excellent match\n- 0.80-0.95: Good match\n- 0.60-0.80: Fair match\n- <0.60: Poor match"
+			},
+			"response": []
+		},
+		{
+			"name": "Assess Invoice Risk",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/invoices/{{document_id}}/assess-risk?vendor_id={{vendor_id}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "invoices", "{{document_id}}", "assess-risk"],
+					"query": [
+						{
+							"key": "vendor_id",
+							"value": "{{vendor_id}}",
+							"description": "Optional vendor ID for vendor risk analysis",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Comprehensive risk assessment and fraud detection.\n\n**Query Parameters:**\n- `vendor_id` (optional): Vendor ID for detailed vendor risk analysis\n\n**Risk Checks:**\n1. Duplicate Detection (hash, invoice number, fuzzy)\n2. Vendor Risk (payment history, fraud flags)\n3. Price Anomalies (statistical outliers)\n4. Amount Risk (unusually high/low)\n5. Pattern Analysis (suspicious behaviors)\n\n**Returns:**\n- Risk level (low/medium/high/critical)\n- Risk score (0-1)\n- Is duplicate flag\n- Risk flags array\n- Recommended action\n\n**Risk Levels:**\n- Low (<30): Auto-approve\n- Medium (30-60): Review recommended\n- High (60-80): Investigation required\n- Critical (>80): Reject/escalate"
+			},
+			"response": []
+		},
+		{
+			"name": "Process Invoice (Orchestrated)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/invoices/{{document_id}}/process?vendor_id={{vendor_id}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "invoices", "{{document_id}}", "process"],
+					"query": [
+						{
+							"key": "vendor_id",
+							"value": "{{vendor_id}}",
+							"description": "Optional vendor ID",
+							"disabled": true
+						}
+					]
+				},
+				"description": "**PRIMARY ENDPOINT: Complete end-to-end processing workflow**\n\n**Use this for automated invoice processing.**\n\n**Workflow:**\n1. ✅ Validate extraction completed\n2. 🎯 Match to purchase order (AI-powered)\n3. ⚠️ Assess risk and detect fraud/duplicates\n4. 🤖 Make approval decision\n5. 📊 Generate audit trail\n\n**Query Parameters:**\n- `vendor_id` (optional): Vendor ID for risk assessment\n\n**Decisions:**\n- `auto_approved`: Process automatically (low risk, good match)\n- `requires_review`: Human review needed (discrepancies, medium risk)\n- `requires_investigation`: Suspicious activity (high risk, fraud flags)\n- `rejected`: Duplicate or critical issues\n- `escalated`: Management approval required\n\n**Returns:**\n- Status and decision\n- Extraction data\n- Matching results (score, discrepancies)\n- Risk assessment (level, flags)\n- Processing metadata (timing, AI calls)\n- Recommended actions"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Processing Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/invoices/{{document_id}}/status",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "invoices", "{{document_id}}", "status"]
+				},
+				"description": "Check current processing status and progress.\n\n**Use for:**\n- Polling long-running operations\n- Tracking workflow progress\n- Debugging processing issues\n\n**Status Values:**\n- `uploaded`: File received, awaiting extraction\n- `extracted`: Data extracted, ready for matching\n- `matched`: Matched to PO, ready for risk assessment\n- `assessed`: Risk assessed, awaiting decision\n- `completed`: Fully processed with decision\n- `failed`: Processing failed (check errors)\n\n**Returns:**\n- Current status\n- Completion flags (extraction, matching, risk)\n- Decision (if completed)\n- Processing time\n- Errors (if any)"
+			},
+			"response": []
+		},
+		{
+			"name": "Reprocess Invoice",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/invoices/{{document_id}}/reprocess?vendor_id={{vendor_id}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "invoices", "{{document_id}}", "reprocess"],
+					"query": [
+						{
+							"key": "vendor_id",
+							"value": "{{vendor_id}}",
+							"description": "Optional vendor ID",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Retry processing for failed or rejected invoices.\n\n**Use Cases:**\n- Retry after fixing data issues\n- Reprocess after PO correction\n- Re-evaluate after vendor status change\n\n**Behavior:**\n- Clears previous matching/risk results\n- Re-runs complete workflow\n- Generates new decision\n\n**Returns:**\n- New status and decision\n- Success message"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Pre-request script for all requests",
+					"console.log('Request to: ' + pm.request.url);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Test script for all requests",
+					"pm.test('Response time is less than 10s', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+					"});",
+					"",
+					"pm.test('Response has valid JSON', function () {",
+					"    pm.response.to.have.jsonBody();",
+					"});"
+				]
+			}
+		}
+	]
+}

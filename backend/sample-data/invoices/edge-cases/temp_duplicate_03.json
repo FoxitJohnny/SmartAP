@@ -1,0 +1,61 @@
+{
+  "invoice_number": "NO-2026-4717",
+  "po_number": null,
+  "vendor": {
+    "name": "Marketing Agency Pro",
+    "address": "500 Marketing Way, Los Angeles, CA 90001",
+    "tax_id": "55-6677889"
+  },
+  "customer": {
+    "name": "Acme Corp",
+    "address": "123 Main St, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "invoice_date": "2025-11-28",
+  "due_date": "2025-12-28",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 5,
+      "unit_price": 199.99,
+      "total": 999.95
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 4,
+      "unit_price": 899.99,
+      "total": 3599.96
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 1,
+      "unit_price": 199.99,
+      "total": 199.99
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 1,
+      "unit_price": 199.99,
+      "total": 199.99
+    },
+    {
+      "description": "External SSD - 2TB",
+      "sku": "SSD-2TB-015",
+      "quantity": 4,
+      "unit_price": 299.99,
+      "total": 1199.96
+    }
+  ],
+  "subtotal": 6199.85,
+  "tax_rate": 0.08,
+  "tax_amount": 495.99,
+  "shipping": 0,
+  "total_amount": 6695.84,
+  "payment_terms": "Net 30",
+  "invoice_type": "duplicate"
+}

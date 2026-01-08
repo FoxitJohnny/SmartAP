@@ -1,0 +1,343 @@
+# Default values for smartap.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  environment: production
+  domain: smartap.example.com
+  imagePullSecrets: []
+
+# Image settings
+image:
+  registry: docker.io
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+# Backend service
+backend:
+  enabled: true
+  name: backend
+  replicaCount: 2
+  image:
+    repository: smartap/backend
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "2000m"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    APP_ENV: production
+    LOG_LEVEL: INFO
+    WORKERS: "4"
+    
+# Frontend service
+frontend:
+  enabled: true
+  name: frontend
+  replicaCount: 2
+  image:
+    repository: smartap/frontend
+  service:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "1000m"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+  env:
+    NODE_ENV: production
+
+# Nginx reverse proxy
+nginx:
+  enabled: true
+  name: nginx
+  replicaCount: 2
+  image:
+    repository: nginx
+    tag: "1.25-alpine"
+  service:
+    type: LoadBalancer
+    port: 80
+    targetPort: 80
+    httpsPort: 443
+    httpsTargetPort: 443
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+
+# PostgreSQL database
+postgresql:
+  enabled: true
+  name: postgresql
+  replicaCount: 1
+  image:
+    repository: postgres
+    tag: "16-alpine"
+  service:
+    type: ClusterIP
+    port: 5432
+    targetPort: 5432
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "2000m"
+  env:
+    POSTGRES_DB: smartap
+    POSTGRES_USER: smartap
+    # POSTGRES_PASSWORD: Set via secret
+
+# Redis cache
+redis:
+  enabled: true
+  name: redis
+  replicaCount: 1
+  image:
+    repository: redis
+    tag: "7-alpine"
+  service:
+    type: ClusterIP
+    port: 6379
+    targetPort: 6379
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 5Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+# Celery worker
+worker:
+  enabled: true
+  name: worker
+  replicaCount: 2
+  image:
+    repository: smartap/backend
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "2000m"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  env:
+    CELERY_CONCURRENCY: "4"
+
+# Celery beat scheduler
+scheduler:
+  enabled: true
+  name: scheduler
+  replicaCount: 1
+  image:
+    repository: smartap/backend
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+  hosts:
+    - host: smartap.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            serviceName: nginx
+            servicePort: 80
+  tls:
+    - secretName: smartap-tls
+      hosts:
+        - smartap.example.com
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod Security Context
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+# Liveness and Readiness Probes
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
+
+# Database Migration Job
+migration:
+  enabled: true
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Secrets (override these in production)
+secrets:
+  # Database
+  postgresPassword: ""  # Required: Set in values-prod.yaml or via --set
+  
+  # Redis (optional, leave empty for no password)
+  redisPassword: ""
+  
+  # Application secrets
+  secretKey: ""  # Required: Django/FastAPI secret key
+  jwtSecret: ""  # Required: JWT signing secret
+  
+  # External services
+  foxitApiKey: ""  # Required: Foxit API key
+  openaiApiKey: ""  # Optional: OpenAI API key
+  anthropicApiKey: ""  # Optional: Anthropic API key
+  
+  # Email (optional)
+  smtpPassword: ""
+
+# ConfigMap settings
+config:
+  # Application settings
+  appName: "SmartAP"
+  appUrl: "https://smartap.example.com"
+  
+  # Database settings
+  databaseUrl: "postgresql://smartap:password@postgresql:5432/smartap"
+  
+  # Redis settings
+  redisUrl: "redis://redis:6379/0"
+  celeryBrokerUrl: "redis://redis:6379/1"
+  celeryResultBackend: "redis://redis:6379/2"
+  
+  # API settings
+  apiV1Prefix: "/api/v1"
+  corsOrigins: '["https://smartap.example.com"]'
+  
+  # File upload settings
+  maxUploadSize: "52428800"  # 50MB
+  allowedFileTypes: '["pdf", "png", "jpg", "jpeg"]'
+  
+  # AI settings
+  aiProvider: "openai"  # openai, anthropic, azure
+  aiModel: "gpt-4o"
+  aiTemperature: "0.1"
+  aiMaxTokens: "4096"
+  
+  # Foxit settings
+  foxitApiUrl: "https://api.foxit.com/v1"
+  foxitOcrEnabled: "true"
+  
+  # Processing settings
+  enableAsyncProcessing: "true"
+  processingTimeout: "300"
+  
+  # Email settings (optional)
+  smtpHost: ""
+  smtpPort: "587"
+  smtpUser: ""
+  smtpFrom: "noreply@smartap.example.com"
+  smtpUseTls: "true"
+  
+  # Logging
+  logLevel: "INFO"
+  logFormat: "json"
+
+# Node affinity and tolerations
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Network Policy
+networkPolicy:
+  enabled: false
+  policyTypes:
+    - Ingress
+    - Egress

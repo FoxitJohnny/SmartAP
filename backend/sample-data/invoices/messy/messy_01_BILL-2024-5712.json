@@ -1,0 +1,56 @@
+{
+  "invoice_number": "BILL-2024-5712",
+  "po_number": "ORDER-90739",
+  "vendor": {
+    "name": "Industrial Parts Co",
+    "address": "400 Parts Ln, Detroit, MI 48201",
+    "tax_id": "44-5566778"
+  },
+  "customer": {
+    "name": "Innovate Solutions",
+    "address": "321 Innovation Dr, Austin, TX 78701",
+    "tax_id": "67-8901234"
+  },
+  "invoice_date": "2026-01-03",
+  "due_date": "2026-02-02",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 4,
+      "unit_price": 149.99,
+      "total": 599.96
+    },
+    {
+      "description": "External SSD - 2TB",
+      "sku": "SSD-2TB-015",
+      "quantity": 8,
+      "unit_price": 299.99,
+      "total": 2399.92
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 10,
+      "unit_price": 499.99,
+      "total": 4999.9
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 9,
+      "unit_price": 249.99,
+      "total": 2249.91
+    }
+  ],
+  "subtotal": 10249.69,
+  "tax_rate": 0.08,
+  "tax_amount": 819.98,
+  "shipping": 0,
+  "total_amount": 11069.67,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

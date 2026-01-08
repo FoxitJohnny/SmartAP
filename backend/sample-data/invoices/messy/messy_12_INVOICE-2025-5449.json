@@ -1,0 +1,63 @@
+{
+  "invoice_number": "INVOICE-2025-5449",
+  "po_number": null,
+  "vendor": {
+    "name": "Professional Services Inc",
+    "address": "300 Service Ave, Miami, FL 33101",
+    "tax_id": "33-4455667"
+  },
+  "customer": {
+    "name": "Innovate Solutions",
+    "address": "321 Innovation Dr, Austin, TX 78701",
+    "tax_id": "67-8901234"
+  },
+  "invoice_date": "2025-12-15",
+  "due_date": "2026-01-14",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 9,
+      "unit_price": 149.99,
+      "total": 1349.91
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 9,
+      "unit_price": 449.99,
+      "total": 4049.91
+    },
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 10,
+      "unit_price": 149.99,
+      "total": 1499.9
+    },
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 3,
+      "unit_price": 599.99,
+      "total": 1799.97
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 2,
+      "unit_price": 199.99,
+      "total": 399.98
+    }
+  ],
+  "subtotal": 9099.67,
+  "tax_rate": 0.08,
+  "tax_amount": 727.97,
+  "shipping": 25.0,
+  "total_amount": 9852.64,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

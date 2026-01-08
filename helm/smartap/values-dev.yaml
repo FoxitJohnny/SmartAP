@@ -1,0 +1,132 @@
+# Development environment overrides for SmartAP Helm chart
+# Usage: helm install smartap ./helm/smartap -f ./helm/smartap/values-dev.yaml
+
+global:
+  environment: development
+  domain: smartap-dev.local
+
+# Reduce replicas for development
+backend:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 2
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  env:
+    APP_ENV: development
+    LOG_LEVEL: DEBUG
+    WORKERS: "2"
+
+frontend:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 2
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+  env:
+    NODE_ENV: development
+
+nginx:
+  replicaCount: 1
+  service:
+    type: ClusterIP  # Use port-forward in dev
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "250m"
+
+postgresql:
+  persistence:
+    enabled: true
+    size: 2Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+redis:
+  persistence:
+    enabled: false  # Use emptyDir in dev
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+worker:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 2
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  env:
+    CELERY_CONCURRENCY: "2"
+
+scheduler:
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
+# Disable ingress in dev (use port-forward)
+ingress:
+  enabled: false
+
+# Disable pod disruption budget in dev
+podDisruptionBudget:
+  enabled: false
+
+# Development secrets (NOT FOR PRODUCTION!)
+secrets:
+  postgresPassword: "dev_password_123"
+  redisPassword: ""
+  secretKey: "dev-secret-key-change-in-production"
+  jwtSecret: "dev-jwt-secret-change-in-production"
+  foxitApiKey: "your-foxit-api-key-here"
+  openaiApiKey: "your-openai-api-key-here"
+  anthropicApiKey: ""
+  smtpPassword: ""
+
+config:
+  appName: "SmartAP (Dev)"
+  appUrl: "http://localhost:8080"
+  databaseUrl: "postgresql://smartap:dev_password_123@postgresql:5432/smartap"
+  corsOrigins: '["http://localhost:3000", "http://localhost:8080"]'
+  logLevel: "DEBUG"
+  logFormat: "text"
+  aiProvider: "openai"
+  aiModel: "gpt-4o-mini"  # Use cheaper model in dev
+  aiTemperature: "0.2"
+  smtpHost: ""  # Disable email in dev

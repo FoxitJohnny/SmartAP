@@ -1,0 +1,265 @@
+{
+  "invoice_number": "BILL-2024-7067",
+  "po_number": "P-32604",
+  "vendor": {
+    "name": "Office Supply Co",
+    "address": "100 Supply St, Denver, CO 80201",
+    "tax_id": "11-2233445"
+  },
+  "customer": {
+    "name": "Global Tech Inc",
+    "address": "456 Tech Ave, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "invoice_date": "2025-10-30",
+  "due_date": "2025-11-29",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 4,
+      "unit_price": 799.99,
+      "total": 3199.96
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 13,
+      "unit_price": 499.99,
+      "total": 6499.87
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 15,
+      "unit_price": 499.99,
+      "total": 7499.85
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 4,
+      "unit_price": 175.0,
+      "total": 700.0
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 17,
+      "unit_price": 175.0,
+      "total": 2975.0
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 8,
+      "unit_price": 249.99,
+      "total": 1999.92
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 6,
+      "unit_price": 1299.99,
+      "total": 7799.9400000000005
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 3,
+      "unit_price": 449.99,
+      "total": 1349.97
+    },
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 2,
+      "unit_price": 149.99,
+      "total": 299.98
+    },
+    {
+      "description": "Wireless Mouse",
+      "sku": "MOU-WL-005",
+      "quantity": 17,
+      "unit_price": 29.99,
+      "total": 509.83
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 13,
+      "unit_price": 249.99,
+      "total": 3249.87
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 18,
+      "unit_price": 175.0,
+      "total": 3150.0
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 20,
+      "unit_price": 249.99,
+      "total": 4999.8
+    },
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 9,
+      "unit_price": 99.99,
+      "total": 899.91
+    },
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 5,
+      "unit_price": 299.99,
+      "total": 1499.95
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 8,
+      "unit_price": 175.0,
+      "total": 1400.0
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 11,
+      "unit_price": 249.99,
+      "total": 2749.8900000000003
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 18,
+      "unit_price": 449.99,
+      "total": 8099.82
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 1,
+      "unit_price": 249.99,
+      "total": 249.99
+    },
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 8,
+      "unit_price": 599.99,
+      "total": 4799.92
+    },
+    {
+      "description": "Webcam - 4K HD",
+      "sku": "WEB-4K-013",
+      "quantity": 14,
+      "unit_price": 129.99,
+      "total": 1819.8600000000001
+    },
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 3,
+      "unit_price": 599.99,
+      "total": 1799.97
+    },
+    {
+      "description": "Wireless Mouse",
+      "sku": "MOU-WL-005",
+      "quantity": 16,
+      "unit_price": 29.99,
+      "total": 479.84
+    },
+    {
+      "description": "External SSD - 2TB",
+      "sku": "SSD-2TB-015",
+      "quantity": 1,
+      "unit_price": 299.99,
+      "total": 299.99
+    },
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 1,
+      "unit_price": 299.99,
+      "total": 299.99
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 14,
+      "unit_price": 199.99,
+      "total": 2799.86
+    },
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 20,
+      "unit_price": 599.99,
+      "total": 11999.8
+    },
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 20,
+      "unit_price": 799.99,
+      "total": 15999.8
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 5,
+      "unit_price": 499.99,
+      "total": 2499.95
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 20,
+      "unit_price": 899.99,
+      "total": 17999.8
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 12,
+      "unit_price": 899.99,
+      "total": 10799.880000000001
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 18,
+      "unit_price": 1299.99,
+      "total": 23399.82
+    },
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 11,
+      "unit_price": 149.99,
+      "total": 1649.89
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 10,
+      "unit_price": 199.99,
+      "total": 1999.9
+    }
+  ],
+  "subtotal": 157781.82,
+  "tax_rate": 0.08,
+  "tax_amount": 12622.55,
+  "shipping": 0,
+  "total_amount": 170404.37,
+  "payment_terms": "Net 30",
+  "invoice_type": "multi-page",
+  "page_count": 2
+}

@@ -1,0 +1,42 @@
+{
+  "invoice_number": "SI-2026-8558",
+  "po_number": "ORDER-96300",
+  "vendor": {
+    "name": "Office Supply Co",
+    "address": "100 Supply St, Denver, CO 80201",
+    "tax_id": "11-2233445"
+  },
+  "customer": {
+    "name": "Global Tech Inc",
+    "address": "456 Tech Ave, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "invoice_date": "2025-11-28",
+  "due_date": "2025-12-28",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 1,
+      "unit_price": 449.99,
+      "total": 449.99
+    },
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 4,
+      "unit_price": 149.99,
+      "total": 599.96
+    }
+  ],
+  "subtotal": 1049.95,
+  "tax_rate": 0.08,
+  "tax_amount": 84.0,
+  "shipping": 15.0,
+  "total_amount": 1148.95,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

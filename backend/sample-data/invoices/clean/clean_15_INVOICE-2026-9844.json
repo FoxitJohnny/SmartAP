@@ -1,0 +1,54 @@
+{
+  "invoice_number": "INVOICE-2026-9844",
+  "po_number": "PO-14348",
+  "vendor": {
+    "name": "Marketing Agency Pro",
+    "address": "500 Marketing Way, Los Angeles, CA 90001",
+    "tax_id": "55-6677889"
+  },
+  "customer": {
+    "name": "Global Tech Inc",
+    "address": "456 Tech Ave, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "invoice_date": "2025-11-13",
+  "due_date": "2025-12-13",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 5,
+      "unit_price": 199.99,
+      "total": 999.95
+    },
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 5,
+      "unit_price": 799.99,
+      "total": 3999.95
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 5,
+      "unit_price": 199.99,
+      "total": 999.95
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 6,
+      "unit_price": 899.99,
+      "total": 5399.9400000000005
+    }
+  ],
+  "subtotal": 11399.79,
+  "tax_rate": 0.08,
+  "tax_amount": 911.98,
+  "shipping": 50.0,
+  "total_amount": 12361.77,
+  "payment_terms": "Net 30",
+  "invoice_type": "service"
+}

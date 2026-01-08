@@ -1,0 +1,61 @@
+{
+  "invoice_number": "NO-2026-9469",
+  "po_number": "P-26179",
+  "vendor": {
+    "name": "Marketing Agency Pro",
+    "address": "500 Marketing Way, Los Angeles, CA 90001",
+    "tax_id": "55-6677889"
+  },
+  "customer": {
+    "name": "Innovate Solutions",
+    "address": "321 Innovation Dr, Austin, TX 78701",
+    "tax_id": "67-8901234"
+  },
+  "invoice_date": "2025-12-05",
+  "due_date": "2026-01-04",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 4,
+      "unit_price": 499.99,
+      "total": 1999.96
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 2,
+      "unit_price": 249.99,
+      "total": 499.98
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 1,
+      "unit_price": 899.99,
+      "total": 899.99
+    },
+    {
+      "description": "Webcam - 4K HD",
+      "sku": "WEB-4K-013",
+      "quantity": 5,
+      "unit_price": 129.99,
+      "total": 649.95
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 5,
+      "unit_price": 249.99,
+      "total": 1249.95
+    }
+  ],
+  "subtotal": 5299.83,
+  "tax_rate": 0.08,
+  "tax_amount": 423.99,
+  "shipping": 25.0,
+  "total_amount": 5748.82,
+  "payment_terms": "Net 30",
+  "invoice_type": "us_standard"
+}

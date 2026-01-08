@@ -1,0 +1,47 @@
+{
+  "invoice_number": "INV-2024-2284",
+  "po_number": "P-39734",
+  "vendor": {
+    "name": "Tech Equipment Ltd",
+    "address": "200 Tech Rd, Seattle, WA 98101",
+    "tax_id": "22-3344556"
+  },
+  "customer": {
+    "name": "Enterprise Systems",
+    "address": "654 Enterprise Way, Boston, MA 02101",
+    "tax_id": "23-4567890"
+  },
+  "invoice_date": "2025-11-19",
+  "due_date": "2025-12-19",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 8,
+      "unit_price": 499.99,
+      "total": 3999.92
+    },
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 3,
+      "unit_price": 99.99,
+      "total": 299.96999999999997
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 2,
+      "unit_price": 1299.99,
+      "total": 2599.98
+    }
+  ],
+  "subtotal": 6899.87,
+  "tax_rate": 0.08,
+  "tax_amount": 551.99,
+  "shipping": 50.0,
+  "total_amount": 7501.86,
+  "payment_terms": "Net 30",
+  "invoice_type": "us_standard"
+}

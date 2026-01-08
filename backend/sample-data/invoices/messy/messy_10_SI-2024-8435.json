@@ -1,0 +1,63 @@
+{
+  "invoice_number": "SI-2024-8435",
+  "po_number": "PO-37626",
+  "vendor": {
+    "name": "Tech Equipment Ltd",
+    "address": "200 Tech Rd, Seattle, WA 98101",
+    "tax_id": "22-3344556"
+  },
+  "customer": {
+    "name": "Premier Services LLC",
+    "address": "789 Business Blvd, Chicago, IL 60601",
+    "tax_id": "45-6789012"
+  },
+  "invoice_date": "2025-11-25",
+  "due_date": "2025-12-25",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 10,
+      "unit_price": 299.99,
+      "total": 2999.9
+    },
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 10,
+      "unit_price": 599.99,
+      "total": 5999.9
+    },
+    {
+      "description": "Webcam - 4K HD",
+      "sku": "WEB-4K-013",
+      "quantity": 5,
+      "unit_price": 129.99,
+      "total": 649.95
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 10,
+      "unit_price": 175.0,
+      "total": 1750.0
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 2,
+      "unit_price": 499.99,
+      "total": 999.98
+    }
+  ],
+  "subtotal": 12399.73,
+  "tax_rate": 0.08,
+  "tax_amount": 991.98,
+  "shipping": 25.0,
+  "total_amount": 13416.71,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "smartap.fullname" . }}-config
+  labels:
+    {{- include "smartap.labels" . | nindent 4 }}
+data:
+  # Application settings
+  APP_NAME: {{ .Values.config.appName | quote }}
+  APP_URL: {{ .Values.config.appUrl | quote }}
+  
+  # Database settings
+  DATABASE_URL: {{ .Values.config.databaseUrl | quote }}
+  
+  # Redis settings
+  REDIS_URL: {{ .Values.config.redisUrl | quote }}
+  CELERY_BROKER_URL: {{ .Values.config.celeryBrokerUrl | quote }}
+  CELERY_RESULT_BACKEND: {{ .Values.config.celeryResultBackend | quote }}
+  
+  # API settings
+  API_V1_PREFIX: {{ .Values.config.apiV1Prefix | quote }}
+  CORS_ORIGINS: {{ .Values.config.corsOrigins | quote }}
+  
+  # File upload settings
+  MAX_UPLOAD_SIZE: {{ .Values.config.maxUploadSize | quote }}
+  ALLOWED_FILE_TYPES: {{ .Values.config.allowedFileTypes | quote }}
+  
+  # AI settings
+  AI_PROVIDER: {{ .Values.config.aiProvider | quote }}
+  AI_MODEL: {{ .Values.config.aiModel | quote }}
+  AI_TEMPERATURE: {{ .Values.config.aiTemperature | quote }}
+  AI_MAX_TOKENS: {{ .Values.config.aiMaxTokens | quote }}
+  
+  # Foxit settings
+  FOXIT_API_URL: {{ .Values.config.foxitApiUrl | quote }}
+  FOXIT_OCR_ENABLED: {{ .Values.config.foxitOcrEnabled | quote }}
+  
+  # Processing settings
+  ENABLE_ASYNC_PROCESSING: {{ .Values.config.enableAsyncProcessing | quote }}
+  PROCESSING_TIMEOUT: {{ .Values.config.processingTimeout | quote }}
+  
+  # Email settings
+  {{- if .Values.config.smtpHost }}
+  SMTP_HOST: {{ .Values.config.smtpHost | quote }}
+  SMTP_PORT: {{ .Values.config.smtpPort | quote }}
+  SMTP_USER: {{ .Values.config.smtpUser | quote }}
+  SMTP_FROM: {{ .Values.config.smtpFrom | quote }}
+  SMTP_USE_TLS: {{ .Values.config.smtpUseTls | quote }}
+  {{- end }}
+  
+  # Logging
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  LOG_FORMAT: {{ .Values.config.logFormat | quote }}

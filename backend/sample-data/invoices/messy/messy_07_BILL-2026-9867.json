@@ -1,0 +1,63 @@
+{
+  "invoice_number": "BILL-2026-9867",
+  "po_number": "P-78140",
+  "vendor": {
+    "name": "Tech Equipment Ltd",
+    "address": "200 Tech Rd, Seattle, WA 98101",
+    "tax_id": "22-3344556"
+  },
+  "customer": {
+    "name": "Acme Corp",
+    "address": "123 Main St, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "invoice_date": "2025-11-04",
+  "due_date": "2025-12-04",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 5,
+      "unit_price": 1299.99,
+      "total": 6499.95
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 7,
+      "unit_price": 175.0,
+      "total": 1225.0
+    },
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 2,
+      "unit_price": 149.99,
+      "total": 299.98
+    },
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 3,
+      "unit_price": 799.99,
+      "total": 2399.9700000000003
+    },
+    {
+      "description": "Webcam - 4K HD",
+      "sku": "WEB-4K-013",
+      "quantity": 9,
+      "unit_price": 129.99,
+      "total": 1169.91
+    }
+  ],
+  "subtotal": 11594.81,
+  "tax_rate": 0.08,
+  "tax_amount": 927.58,
+  "shipping": 0,
+  "total_amount": 12522.39,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

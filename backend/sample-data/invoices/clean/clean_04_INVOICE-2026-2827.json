@@ -1,0 +1,61 @@
+{
+  "invoice_number": "INVOICE-2026-2827",
+  "po_number": null,
+  "vendor": {
+    "name": "Office Supply Co",
+    "address": "100 Supply St, Denver, CO 80201",
+    "tax_id": "11-2233445"
+  },
+  "customer": {
+    "name": "Acme Corp",
+    "address": "123 Main St, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "invoice_date": "2025-10-19",
+  "due_date": "2025-11-18",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 9,
+      "unit_price": 99.99,
+      "total": 899.91
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 6,
+      "unit_price": 199.99,
+      "total": 1199.94
+    },
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 10,
+      "unit_price": 99.99,
+      "total": 999.9
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 6,
+      "unit_price": 249.99,
+      "total": 1499.94
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 9,
+      "unit_price": 1299.99,
+      "total": 11699.91
+    }
+  ],
+  "subtotal": 16299.6,
+  "tax_rate": 0.08,
+  "tax_amount": 1303.97,
+  "shipping": 25.0,
+  "total_amount": 17628.57,
+  "payment_terms": "Net 30",
+  "invoice_type": "us_standard"
+}

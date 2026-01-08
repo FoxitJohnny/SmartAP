@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler
+  namespace: smartap
+  labels:
+    app: scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduler
+  template:
+    metadata:
+      labels:
+        app: scheduler
+    spec:
+      initContainers:
+      - name: wait-for-redis
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z redis-service 6379; do
+            echo "Waiting for Redis..."
+            sleep 2
+          done
+          echo "Redis is ready!"
+      containers:
+      - name: scheduler
+        image: smartap/backend:latest
+        imagePullPolicy: Always
+        command:
+        - celery
+        - -A
+        - src.celery_app
+        - beat
+        - --loglevel=info
+        envFrom:
+        - configMapRef:
+            name: smartap-config
+        - secretRef:
+            name: smartap-secrets
+        env:
+        - name: DATABASE_URL
+          value: "postgresql+asyncpg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)/$(REDIS_DB)"
+        - name: CELERY_BROKER_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)/1"
+        - name: CELERY_RESULT_BACKEND
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)/1"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

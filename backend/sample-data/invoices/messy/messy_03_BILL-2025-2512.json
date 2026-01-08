@@ -1,0 +1,63 @@
+{
+  "invoice_number": "BILL-2025-2512",
+  "po_number": null,
+  "vendor": {
+    "name": "Marketing Agency Pro",
+    "address": "500 Marketing Way, Los Angeles, CA 90001",
+    "tax_id": "55-6677889"
+  },
+  "customer": {
+    "name": "Acme Corp",
+    "address": "123 Main St, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "invoice_date": "2025-11-12",
+  "due_date": "2025-12-12",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 9,
+      "unit_price": 899.99,
+      "total": 8099.91
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 8,
+      "unit_price": 449.99,
+      "total": 3599.92
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 6,
+      "unit_price": 249.99,
+      "total": 1499.94
+    },
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 4,
+      "unit_price": 99.99,
+      "total": 399.96
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 6,
+      "unit_price": 199.99,
+      "total": 1199.94
+    }
+  ],
+  "subtotal": 14799.67,
+  "tax_rate": 0.08,
+  "tax_amount": 1183.97,
+  "shipping": 50.0,
+  "total_amount": 16033.64,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

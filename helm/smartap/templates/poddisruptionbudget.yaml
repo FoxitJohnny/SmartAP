@@ -1,0 +1,37 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "smartap.fullname" . }}-backend
+  labels:
+    {{- include "smartap.componentLabels" (dict "component" "backend" "root" .) | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "smartap.componentSelectorLabels" (dict "component" "backend" "root" .) | nindent 6 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "smartap.fullname" . }}-frontend
+  labels:
+    {{- include "smartap.componentLabels" (dict "component" "frontend" "root" .) | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "smartap.componentSelectorLabels" (dict "component" "frontend" "root" .) | nindent 6 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "smartap.fullname" . }}-worker
+  labels:
+    {{- include "smartap.componentLabels" (dict "component" "worker" "root" .) | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "smartap.componentSelectorLabels" (dict "component" "worker" "root" .) | nindent 6 }}
+{{- end }}

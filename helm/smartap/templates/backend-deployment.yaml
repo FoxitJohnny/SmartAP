@@ -1,0 +1,94 @@
+{{- if .Values.backend.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "smartap.fullname" . }}-backend
+  labels:
+    {{- include "smartap.componentLabels" (dict "component" "backend" "root" .) | nindent 4 }}
+spec:
+  {{- if not .Values.backend.autoscaling.enabled }}
+  replicas: {{ .Values.backend.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "smartap.componentSelectorLabels" (dict "component" "backend" "root" .) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "smartap.componentSelectorLabels" (dict "component" "backend" "root" .) | nindent 8 }}
+    spec:
+      {{- include "smartap.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "smartap.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: backend
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: {{ include "smartap.image" (dict "registry" .Values.image.registry "repository" .Values.backend.image.repository "tag" (.Values.image.tag | default .Chart.AppVersion) "root" .) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["uvicorn"]
+        args:
+          - "src.main:app"
+          - "--host"
+          - "0.0.0.0"
+          - "--port"
+          - "{{ .Values.backend.service.targetPort }}"
+          - "--workers"
+          - "$(WORKERS)"
+        ports:
+        - name: http
+          containerPort: {{ .Values.backend.service.targetPort }}
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: {{ include "smartap.fullname" . }}-config
+        - secretRef:
+            name: {{ include "smartap.fullname" . }}-secret
+        env:
+        - name: APP_ENV
+          value: {{ .Values.backend.env.APP_ENV | quote }}
+        - name: LOG_LEVEL
+          value: {{ .Values.backend.env.LOG_LEVEL | quote }}
+        - name: WORKERS
+          value: {{ .Values.backend.env.WORKERS | quote }}
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.backend.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

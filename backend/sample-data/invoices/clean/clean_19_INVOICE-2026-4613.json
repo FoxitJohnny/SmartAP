@@ -1,0 +1,40 @@
+{
+  "invoice_number": "INVOICE-2026-4613",
+  "po_number": "PO-27192",
+  "vendor": {
+    "name": "Industrial Parts Co",
+    "address": "400 Parts Ln, Detroit, MI 48201",
+    "tax_id": "44-5566778"
+  },
+  "customer": {
+    "name": "Innovate Solutions",
+    "address": "321 Innovation Dr, Austin, TX 78701",
+    "tax_id": "67-8901234"
+  },
+  "invoice_date": "2025-11-23",
+  "due_date": "2025-12-23",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 7,
+      "unit_price": 599.99,
+      "total": 4199.93
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 3,
+      "unit_price": 449.99,
+      "total": 1349.97
+    }
+  ],
+  "subtotal": 5549.9,
+  "tax_rate": 0.08,
+  "tax_amount": 443.99,
+  "shipping": 0,
+  "total_amount": 5993.89,
+  "payment_terms": "Net 30",
+  "invoice_type": "product"
+}

@@ -1,0 +1,33 @@
+{
+  "invoice_number": "INVOICE-2024-3679",
+  "po_number": null,
+  "vendor": {
+    "name": "Professional Services Inc",
+    "address": "300 Service Ave, Miami, FL 33101",
+    "tax_id": "33-4455667"
+  },
+  "customer": {
+    "name": "Global Tech Inc",
+    "address": "456 Tech Ave, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "invoice_date": "2025-12-08",
+  "due_date": "2026-01-07",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 2,
+      "unit_price": 599.99,
+      "total": 1199.98
+    }
+  ],
+  "subtotal": 1199.98,
+  "tax_rate": 0,
+  "tax_amount": 0,
+  "shipping": 0,
+  "total_amount": 1199.98,
+  "payment_terms": "Net 30",
+  "invoice_type": "missing_po"
+}

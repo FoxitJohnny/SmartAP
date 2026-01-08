@@ -1,0 +1,196 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartap-api
+  namespace: smartap
+  labels:
+    app: smartap
+    component: api
+    version: v1
+spec:
+  replicas: 3  # Start with 3 replicas, HPA will scale up/down
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: smartap
+      component: api
+  template:
+    metadata:
+      labels:
+        app: smartap
+        component: api
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: smartap-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: api
+        image: smartap-api:latest  # Replace with your registry/image
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        env:
+        # Import all config from ConfigMap
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: APP_NAME
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: DEBUG
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: LOG_LEVEL
+        - name: LOG_FORMAT
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: LOG_FORMAT
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: DATABASE_URL
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: smartap-secrets
+              key: DB_PASSWORD
+        - name: DATABASE_POOL_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: DATABASE_POOL_SIZE
+        - name: DATABASE_POOL_MAX_OVERFLOW
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: DATABASE_POOL_MAX_OVERFLOW
+        - name: REDIS_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: REDIS_ENABLED
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: REDIS_URL
+        - name: CACHE_TTL_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: CACHE_TTL_SECONDS
+        - name: AI_PROVIDER
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: AI_PROVIDER
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: smartap-secrets
+              key: GITHUB_TOKEN
+        - name: MODEL_ID
+          valueFrom:
+            configMapKeyRef:
+              name: smartap-config
+              key: MODEL_ID
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/uploads
+        - name: processed
+          mountPath: /app/processed
+        - name: logs
+          mountPath: /app/logs
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 12  # 120 seconds max startup time
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: smartap-uploads-pvc
+      - name: processed
+        persistentVolumeClaim:
+          claimName: smartap-processed-pvc
+      - name: logs
+        persistentVolumeClaim:
+          claimName: smartap-logs-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartap-api
+  namespace: smartap
+  labels:
+    app: smartap
+    component: api
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: smartap
+    component: api
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: smartap-sa
+  namespace: smartap
+  labels:
+    app: smartap

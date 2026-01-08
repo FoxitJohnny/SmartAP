@@ -1,0 +1,62 @@
+{
+  "invoice_number": "SI-2025-2756",
+  "po_number": "P-32154",
+  "vendor": {
+    "name": "Professional Services Inc",
+    "address": "300 Service Ave, Miami, FL 33101",
+    "tax_id": "33-4455667"
+  },
+  "customer": {
+    "name": "Enterprise Systems",
+    "address": "654 Enterprise Way, Boston, MA 02101",
+    "tax_id": "23-4567890"
+  },
+  "invoice_date": "2025-12-09",
+  "due_date": "2026-01-08",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Wireless Mouse",
+      "sku": "MOU-WL-005",
+      "quantity": 7,
+      "unit_price": 29.99,
+      "total": 209.92999999999998
+    },
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 5,
+      "unit_price": 799.99,
+      "total": 3999.95
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 1,
+      "unit_price": 199.99,
+      "total": 199.99
+    },
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 3,
+      "unit_price": 599.99,
+      "total": 1799.97
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 8,
+      "unit_price": 499.99,
+      "total": 3999.92
+    }
+  ],
+  "subtotal": 10209.76,
+  "tax_rate": 0.08,
+  "tax_amount": 816.78,
+  "shipping": 0,
+  "total_amount": 11026.54,
+  "payment_terms": "Net 30",
+  "invoice_type": "price_spike",
+  "notes": "Price is 200%+ above historical average for this vendor"
+}

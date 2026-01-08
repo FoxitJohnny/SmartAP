@@ -1,0 +1,61 @@
+{
+  "invoice_number": "SI-2024-6290",
+  "po_number": "ORDER-62749",
+  "vendor": {
+    "name": "Professional Services Inc",
+    "address": "300 Service Ave, Miami, FL 33101",
+    "tax_id": "33-4455667"
+  },
+  "customer": {
+    "name": "Acme Corp",
+    "address": "123 Main St, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "invoice_date": "2026-01-04",
+  "due_date": "2026-02-03",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "External SSD - 2TB",
+      "sku": "SSD-2TB-015",
+      "quantity": 8,
+      "unit_price": 299.99,
+      "total": 2399.92
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 3,
+      "unit_price": 449.99,
+      "total": 1349.97
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 1,
+      "unit_price": 1299.99,
+      "total": 1299.99
+    },
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 10,
+      "unit_price": 799.99,
+      "total": 7999.9
+    },
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 1,
+      "unit_price": 299.99,
+      "total": 299.99
+    }
+  ],
+  "subtotal": 13349.77,
+  "tax_rate": 0.08,
+  "tax_amount": 1067.98,
+  "shipping": 0,
+  "total_amount": 14417.75,
+  "payment_terms": "Net 30",
+  "invoice_type": "service"
+}

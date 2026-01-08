@@ -1,0 +1,56 @@
+{{- if .Values.migration.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "smartap.fullname" . }}-migration-{{ .Release.Revision }}
+  labels:
+    {{- include "smartap.componentLabels" (dict "component" "migration" "root" .) | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.migration.annotations | nindent 4 }}
+spec:
+  backoffLimit: {{ .Values.migration.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.migration.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "smartap.componentSelectorLabels" (dict "component" "migration" "root" .) | nindent 8 }}
+    spec:
+      {{- include "smartap.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "smartap.serviceAccountName" . }}
+      restartPolicy: Never
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+      - name: wait-for-db
+        image: busybox:1.36
+        command:
+          - sh
+          - -c
+          - |
+            echo "Waiting for PostgreSQL..."
+            until nc -z {{ include "smartap.fullname" . }}-postgresql {{ .Values.postgresql.service.port }}; do
+              echo "PostgreSQL is unavailable - sleeping"
+              sleep 2
+            done
+            echo "PostgreSQL is up"
+      containers:
+      - name: migration
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: {{ include "smartap.image" (dict "registry" .Values.image.registry "repository" .Values.backend.image.repository "tag" (.Values.image.tag | default .Chart.AppVersion) "root" .) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+            echo "Running database migrations..."
+            alembic upgrade head
+            echo "Migrations completed successfully"
+        envFrom:
+        - configMapRef:
+            name: {{ include "smartap.fullname" . }}-config
+        - secretRef:
+            name: {{ include "smartap.fullname" . }}-secret
+        resources:
+          {{- toYaml .Values.migration.resources | nindent 12 }}
+{{- end }}

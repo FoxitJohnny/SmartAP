@@ -1,0 +1,54 @@
+{
+  "invoice_number": "NO-2024-4454",
+  "po_number": "ORDER-12628",
+  "vendor": {
+    "name": "Office Supply Co",
+    "address": "100 Supply St, Denver, CO 80201",
+    "tax_id": "11-2233445"
+  },
+  "customer": {
+    "name": "Enterprise Systems",
+    "address": "654 Enterprise Way, Boston, MA 02101",
+    "tax_id": "23-4567890"
+  },
+  "invoice_date": "2025-10-25",
+  "due_date": "2025-11-24",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 2,
+      "unit_price": 799.99,
+      "total": 1599.98
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 10,
+      "unit_price": 499.99,
+      "total": 4999.9
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 4,
+      "unit_price": 499.99,
+      "total": 1999.96
+    },
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 7,
+      "unit_price": 799.99,
+      "total": 5599.93
+    }
+  ],
+  "subtotal": 14199.77,
+  "tax_rate": 0.08,
+  "tax_amount": 1135.98,
+  "shipping": 25.0,
+  "total_amount": 15360.75,
+  "payment_terms": "Net 30",
+  "invoice_type": "product"
+}

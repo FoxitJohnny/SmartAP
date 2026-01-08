@@ -1,0 +1,25 @@
+{
+  "generation_date": "2026-01-08 13:11:24",
+  "total_invoices": 46,
+  "clean_invoices": 20,
+  "messy_invoices": 15,
+  "edge_case_invoices": 15,
+  "currency_distribution": {
+    "USD": 39,
+    "JPY": 5,
+    "GBP": 2
+  },
+  "invoice_types": {
+    "us_standard": 5,
+    "international": 5,
+    "service": 5,
+    "product": 5,
+    "standard": 15,
+    "multi-page": 5,
+    "duplicate": 3,
+    "price_spike": 3
+  },
+  "total_value": 1260720.37,
+  "average_invoice_value": 27406.96,
+  "po_coverage": 84.8
+}

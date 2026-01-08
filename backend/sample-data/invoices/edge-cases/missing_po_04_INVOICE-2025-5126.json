@@ -1,0 +1,33 @@
+{
+  "invoice_number": "INVOICE-2025-5126",
+  "po_number": null,
+  "vendor": {
+    "name": "Marketing Agency Pro",
+    "address": "500 Marketing Way, Los Angeles, CA 90001",
+    "tax_id": "55-6677889"
+  },
+  "customer": {
+    "name": "Acme Corp",
+    "address": "123 Main St, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "invoice_date": "2025-12-12",
+  "due_date": "2026-01-11",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Wireless Mouse",
+      "sku": "MOU-WL-005",
+      "quantity": 1,
+      "unit_price": 29.99,
+      "total": 29.99
+    }
+  ],
+  "subtotal": 29.99,
+  "tax_rate": 0,
+  "tax_amount": 0,
+  "shipping": 0,
+  "total_amount": 29.99,
+  "payment_terms": "Net 30",
+  "invoice_type": "missing_po"
+}

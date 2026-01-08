@@ -1,0 +1,61 @@
+{
+  "invoice_number": "INVOICE-2025-8459",
+  "po_number": "P-17971",
+  "vendor": {
+    "name": "Professional Services Inc",
+    "address": "300 Service Ave, Miami, FL 33101",
+    "tax_id": "33-4455667"
+  },
+  "customer": {
+    "name": "Enterprise Systems",
+    "address": "654 Enterprise Way, Boston, MA 02101",
+    "tax_id": "23-4567890"
+  },
+  "invoice_date": "2026-01-01",
+  "due_date": "2026-01-31",
+  "currency": "JPY",
+  "line_items": [
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 4,
+      "unit_price": 149.99,
+      "total": 599.96
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 3,
+      "unit_price": 499.99,
+      "total": 1499.97
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 3,
+      "unit_price": 449.99,
+      "total": 1349.97
+    },
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 3,
+      "unit_price": 599.99,
+      "total": 1799.97
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 4,
+      "unit_price": 499.99,
+      "total": 1999.96
+    }
+  ],
+  "subtotal": 7249.83,
+  "tax_rate": 0.1,
+  "tax_amount": 724.98,
+  "shipping": 0,
+  "total_amount": 7974.81,
+  "payment_terms": "Net 30",
+  "invoice_type": "international"
+}

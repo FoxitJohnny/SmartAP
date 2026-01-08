@@ -1,0 +1,54 @@
+{
+  "invoice_number": "BILL-2025-3140",
+  "po_number": "P-34877",
+  "vendor": {
+    "name": "Marketing Agency Pro",
+    "address": "500 Marketing Way, Los Angeles, CA 90001",
+    "tax_id": "55-6677889"
+  },
+  "customer": {
+    "name": "Enterprise Systems",
+    "address": "654 Enterprise Way, Boston, MA 02101",
+    "tax_id": "23-4567890"
+  },
+  "invoice_date": "2025-11-05",
+  "due_date": "2025-12-05",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 10,
+      "unit_price": 599.99,
+      "total": 5999.9
+    },
+    {
+      "description": "Webcam - 4K HD",
+      "sku": "WEB-4K-013",
+      "quantity": 9,
+      "unit_price": 129.99,
+      "total": 1169.91
+    },
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 4,
+      "unit_price": 299.99,
+      "total": 1199.96
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 2,
+      "unit_price": 199.99,
+      "total": 399.98
+    }
+  ],
+  "subtotal": 8769.75,
+  "tax_rate": 0.08,
+  "tax_amount": 701.58,
+  "shipping": 0,
+  "total_amount": 9471.33,
+  "payment_terms": "Net 30",
+  "invoice_type": "service"
+}

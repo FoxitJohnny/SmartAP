@@ -1,0 +1,96 @@
+{{- if .Values.postgresql.enabled -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "smartap.fullname" . }}-postgresql
+  labels:
+    {{- include "smartap.componentLabels" (dict "component" "postgresql" "root" .) | nindent 4 }}
+spec:
+  serviceName: {{ include "smartap.fullname" . }}-postgresql
+  replicas: {{ .Values.postgresql.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "smartap.componentSelectorLabels" (dict "component" "postgresql" "root" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "smartap.componentSelectorLabels" (dict "component" "postgresql" "root" .) | nindent 8 }}
+    spec:
+      {{- include "smartap.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "smartap.serviceAccountName" . }}
+      securityContext:
+        fsGroup: 999
+        runAsUser: 999
+        runAsNonRoot: true
+      containers:
+      - name: postgresql
+        image: {{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: postgresql
+          containerPort: {{ .Values.postgresql.service.targetPort }}
+          protocol: TCP
+        env:
+        - name: POSTGRES_DB
+          value: {{ .Values.postgresql.env.POSTGRES_DB | quote }}
+        - name: POSTGRES_USER
+          value: {{ .Values.postgresql.env.POSTGRES_USER | quote }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "smartap.fullname" . }}-secret
+              key: POSTGRES_PASSWORD
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - pg_isready -U $POSTGRES_USER
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - pg_isready -U $POSTGRES_USER
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          {{- toYaml .Values.postgresql.resources | nindent 12 }}
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.postgresql.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - {{ .Values.postgresql.persistence.accessMode }}
+      {{- if .Values.postgresql.persistence.storageClass }}
+      storageClassName: {{ .Values.postgresql.persistence.storageClass | quote }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.postgresql.persistence.size }}
+  {{- else }}
+  volumes:
+  - name: data
+    emptyDir: {}
+  {{- end }}
+{{- end }}

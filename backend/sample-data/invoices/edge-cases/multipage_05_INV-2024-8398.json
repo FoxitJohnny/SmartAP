@@ -1,0 +1,279 @@
+{
+  "invoice_number": "INV-2024-8398",
+  "po_number": "ORDER-58647",
+  "vendor": {
+    "name": "Industrial Parts Co",
+    "address": "400 Parts Ln, Detroit, MI 48201",
+    "tax_id": "44-5566778"
+  },
+  "customer": {
+    "name": "Enterprise Systems",
+    "address": "654 Enterprise Way, Boston, MA 02101",
+    "tax_id": "23-4567890"
+  },
+  "invoice_date": "2025-12-02",
+  "due_date": "2026-01-01",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 9,
+      "unit_price": 175.0,
+      "total": 1575.0
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 17,
+      "unit_price": 1299.99,
+      "total": 22099.83
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 11,
+      "unit_price": 249.99,
+      "total": 2749.8900000000003
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 10,
+      "unit_price": 199.99,
+      "total": 1999.9
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 15,
+      "unit_price": 499.99,
+      "total": 7499.85
+    },
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 16,
+      "unit_price": 299.99,
+      "total": 4799.84
+    },
+    {
+      "description": "Webcam - 4K HD",
+      "sku": "WEB-4K-013",
+      "quantity": 14,
+      "unit_price": 129.99,
+      "total": 1819.8600000000001
+    },
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 10,
+      "unit_price": 99.99,
+      "total": 999.9
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 18,
+      "unit_price": 449.99,
+      "total": 8099.82
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 13,
+      "unit_price": 1299.99,
+      "total": 16899.87
+    },
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 1,
+      "unit_price": 799.99,
+      "total": 799.99
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 5,
+      "unit_price": 899.99,
+      "total": 4499.95
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 16,
+      "unit_price": 449.99,
+      "total": 7199.84
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 2,
+      "unit_price": 899.99,
+      "total": 1799.98
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 2,
+      "unit_price": 199.99,
+      "total": 399.98
+    },
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 6,
+      "unit_price": 799.99,
+      "total": 4799.9400000000005
+    },
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 1,
+      "unit_price": 799.99,
+      "total": 799.99
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 11,
+      "unit_price": 899.99,
+      "total": 9899.89
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 12,
+      "unit_price": 175.0,
+      "total": 2100.0
+    },
+    {
+      "description": "Monitor - 27 inch 4K",
+      "sku": "MON-27-004",
+      "quantity": 7,
+      "unit_price": 449.99,
+      "total": 3149.9300000000003
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 8,
+      "unit_price": 1299.99,
+      "total": 10399.92
+    },
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 16,
+      "unit_price": 299.99,
+      "total": 4799.84
+    },
+    {
+      "description": "Wireless Mouse",
+      "sku": "MOU-WL-005",
+      "quantity": 19,
+      "unit_price": 29.99,
+      "total": 569.81
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 12,
+      "unit_price": 249.99,
+      "total": 2999.88
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 2,
+      "unit_price": 175.0,
+      "total": 350.0
+    },
+    {
+      "description": "Wireless Mouse",
+      "sku": "MOU-WL-005",
+      "quantity": 20,
+      "unit_price": 29.99,
+      "total": 599.8
+    },
+    {
+      "description": "Printer - Laser Color",
+      "sku": "PRT-LSR-007",
+      "quantity": 7,
+      "unit_price": 799.99,
+      "total": 5599.93
+    },
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 16,
+      "unit_price": 299.99,
+      "total": 4799.84
+    },
+    {
+      "description": "Webcam - 4K HD",
+      "sku": "WEB-4K-013",
+      "quantity": 17,
+      "unit_price": 129.99,
+      "total": 2209.83
+    },
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 15,
+      "unit_price": 149.99,
+      "total": 2249.8500000000004
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 3,
+      "unit_price": 1299.99,
+      "total": 3899.9700000000003
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 14,
+      "unit_price": 899.99,
+      "total": 12599.86
+    },
+    {
+      "description": "Standing Desk - Adjustable",
+      "sku": "SD-ADJ-002",
+      "quantity": 8,
+      "unit_price": 599.99,
+      "total": 4799.92
+    },
+    {
+      "description": "UPS Battery Backup - 1500VA",
+      "sku": "UPS-1500-012",
+      "quantity": 13,
+      "unit_price": 249.99,
+      "total": 3249.87
+    },
+    {
+      "description": "Docking Station - USB-C",
+      "sku": "DOC-USBC-014",
+      "quantity": 17,
+      "unit_price": 199.99,
+      "total": 3399.83
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 18,
+      "unit_price": 1299.99,
+      "total": 23399.82
+    }
+  ],
+  "subtotal": 189921.22,
+  "tax_rate": 0.08,
+  "tax_amount": 15193.7,
+  "shipping": 0,
+  "total_amount": 205114.92,
+  "payment_terms": "Net 30",
+  "invoice_type": "multi-page",
+  "page_count": 2
+}

@@ -1,0 +1,61 @@
+{
+  "invoice_number": "NO-2024-8814",
+  "po_number": "ORDER-33945",
+  "vendor": {
+    "name": "Tech Equipment Ltd",
+    "address": "200 Tech Rd, Seattle, WA 98101",
+    "tax_id": "22-3344556"
+  },
+  "customer": {
+    "name": "Global Tech Inc",
+    "address": "456 Tech Ave, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "invoice_date": "2025-12-12",
+  "due_date": "2026-01-11",
+  "currency": "GBP",
+  "line_items": [
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 6,
+      "unit_price": 1299.99,
+      "total": 7799.9400000000005
+    },
+    {
+      "description": "Keyboard - Mechanical",
+      "sku": "KEY-MECH-006",
+      "quantity": 9,
+      "unit_price": 149.99,
+      "total": 1349.91
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 7,
+      "unit_price": 175.0,
+      "total": 1225.0
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 8,
+      "unit_price": 1299.99,
+      "total": 10399.92
+    },
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 6,
+      "unit_price": 499.99,
+      "total": 2999.94
+    }
+  ],
+  "subtotal": 23774.71,
+  "tax_rate": 0.2,
+  "tax_amount": 4754.94,
+  "shipping": 0,
+  "total_amount": 28529.65,
+  "payment_terms": "Net 30",
+  "invoice_type": "international"
+}

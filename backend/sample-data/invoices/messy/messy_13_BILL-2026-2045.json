@@ -1,0 +1,49 @@
+{
+  "invoice_number": "BILL-2026-2045",
+  "po_number": "PO-53019",
+  "vendor": {
+    "name": "Professional Services Inc",
+    "address": "300 Service Ave, Miami, FL 33101",
+    "tax_id": "33-4455667"
+  },
+  "customer": {
+    "name": "Enterprise Systems",
+    "address": "654 Enterprise Way, Boston, MA 02101",
+    "tax_id": "23-4567890"
+  },
+  "invoice_date": "2025-10-27",
+  "due_date": "2025-11-26",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Software License - Annual",
+      "sku": "SFT-LIC-008",
+      "quantity": 3,
+      "unit_price": 499.99,
+      "total": 1499.97
+    },
+    {
+      "description": "Consulting Services - Hourly",
+      "sku": "CON-HR-010",
+      "quantity": 5,
+      "unit_price": 175.0,
+      "total": 875.0
+    },
+    {
+      "description": "Laptop Computer - 16GB RAM",
+      "sku": "LAP-16G-003",
+      "quantity": 1,
+      "unit_price": 1299.99,
+      "total": 1299.99
+    }
+  ],
+  "subtotal": 3674.96,
+  "tax_rate": 0.08,
+  "tax_amount": 294.0,
+  "shipping": 0,
+  "total_amount": 3968.96,
+  "payment_terms": "Net 30",
+  "invoice_type": "standard",
+  "quality": "messy",
+  "notes": "Simulated poor scan quality"
+}

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smartap
+  labels:
+    name: smartap
+    app: smartap
+    environment: production

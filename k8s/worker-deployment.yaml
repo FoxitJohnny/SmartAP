@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: smartap
+  labels:
+    app: worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      initContainers:
+      - name: wait-for-redis
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z redis-service 6379; do
+            echo "Waiting for Redis..."
+            sleep 2
+          done
+          echo "Redis is ready!"
+      containers:
+      - name: worker
+        image: smartap/backend:latest
+        imagePullPolicy: Always
+        command:
+        - celery
+        - -A
+        - src.celery_app
+        - worker
+        - --loglevel=info
+        - --concurrency=4
+        envFrom:
+        - configMapRef:
+            name: smartap-config
+        - secretRef:
+            name: smartap-secrets
+        env:
+        - name: DATABASE_URL
+          value: "postgresql+asyncpg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)/$(REDIS_DB)"
+        - name: CELERY_BROKER_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)/1"
+        - name: CELERY_RESULT_BACKEND
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)/1"
+        volumeMounts:
+        - name: uploads-storage
+          mountPath: /app/data/uploads
+        - name: processed-storage
+          mountPath: /app/data/processed
+        - name: archival-storage
+          mountPath: /app/data/archival
+        - name: signed-storage
+          mountPath: /app/data/signed
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+      volumes:
+      - name: uploads-storage
+        persistentVolumeClaim:
+          claimName: uploads-pvc
+      - name: processed-storage
+        persistentVolumeClaim:
+          claimName: processed-pvc
+      - name: archival-storage
+        persistentVolumeClaim:
+          claimName: archival-pvc
+      - name: signed-storage
+        persistentVolumeClaim:
+          claimName: signed-pvc

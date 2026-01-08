@@ -1,0 +1,40 @@
+{
+  "invoice_number": "SI-2024-7397",
+  "po_number": "P-49908",
+  "vendor": {
+    "name": "Office Supply Co",
+    "address": "100 Supply St, Denver, CO 80201",
+    "tax_id": "11-2233445"
+  },
+  "customer": {
+    "name": "Global Tech Inc",
+    "address": "456 Tech Ave, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "invoice_date": "2025-11-11",
+  "due_date": "2025-12-11",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Cloud Storage - 1TB",
+      "sku": "CLD-1TB-009",
+      "quantity": 5,
+      "unit_price": 99.99,
+      "total": 499.95
+    },
+    {
+      "description": "Network Router - Enterprise",
+      "sku": "NET-RTR-011",
+      "quantity": 4,
+      "unit_price": 899.99,
+      "total": 3599.96
+    }
+  ],
+  "subtotal": 4099.91,
+  "tax_rate": 0.08,
+  "tax_amount": 327.99,
+  "shipping": 0,
+  "total_amount": 4427.9,
+  "payment_terms": "Net 30",
+  "invoice_type": "product"
+}

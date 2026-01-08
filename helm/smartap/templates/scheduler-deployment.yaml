@@ -1,0 +1,56 @@
+{{- if .Values.scheduler.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "smartap.fullname" . }}-scheduler
+  labels:
+    {{- include "smartap.componentLabels" (dict "component" "scheduler" "root" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.scheduler.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "smartap.componentSelectorLabels" (dict "component" "scheduler" "root" .) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "smartap.componentSelectorLabels" (dict "component" "scheduler" "root" .) | nindent 8 }}
+    spec:
+      {{- include "smartap.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "smartap.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: scheduler
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: {{ include "smartap.image" (dict "registry" .Values.image.registry "repository" .Values.scheduler.image.repository "tag" (.Values.image.tag | default .Chart.AppVersion) "root" .) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["celery"]
+        args:
+          - "-A"
+          - "src.celery_app"
+          - "beat"
+          - "--loglevel=info"
+        envFrom:
+        - configMapRef:
+            name: {{ include "smartap.fullname" . }}-config
+        - secretRef:
+            name: {{ include "smartap.fullname" . }}-secret
+        resources:
+          {{- toYaml .Values.scheduler.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

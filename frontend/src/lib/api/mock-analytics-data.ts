@@ -1,0 +1,263 @@
+/**
+ * Mock data for analytics dashboard
+ * This provides realistic sample data for development and testing
+ */
+
+import {
+  DashboardMetrics,
+  InvoiceVolumeData,
+  StatusDistribution,
+  ProcessingTimeData,
+  RiskDistribution,
+  VendorVolume,
+  STPRateData,
+  RecentActivity,
+} from './analytics';
+
+export const mockDashboardMetrics: DashboardMetrics = {
+  totalInvoices: { value: 1234, change: 12.5, trend: 'up' },
+  stpRate: { value: 87.2, change: 3.1, trend: 'up' },
+  avgProcessingTime: { value: '4.2s', change: -0.8, trend: 'down' },
+  pendingApprovals: { value: 42, change: -5.0, trend: 'down' },
+  riskFlags: { value: 7, change: 2.0, trend: 'up' },
+  totalValue: { value: '$2,456,789', change: 8.3, trend: 'up' },
+};
+
+export const mockInvoiceVolume: InvoiceVolumeData[] = [
+  { date: '2026-01-01', count: 45, value: 125000 },
+  { date: '2026-01-02', count: 52, value: 143000 },
+  { date: '2026-01-03', count: 38, value: 98000 },
+  { date: '2026-01-04', count: 61, value: 167000 },
+  { date: '2026-01-05', count: 48, value: 132000 },
+  { date: '2026-01-06', count: 55, value: 151000 },
+  { date: '2026-01-07', count: 44, value: 118000 },
+];
+
+export const mockStatusDistribution: StatusDistribution[] = [
+  { status: 'Completed', count: 543, percentage: 44.0 },
+  { status: 'Processing', count: 234, percentage: 19.0 },
+  { status: 'Pending', count: 187, percentage: 15.2 },
+  { status: 'Risk Review', count: 156, percentage: 12.6 },
+  { status: 'Rejected', count: 78, percentage: 6.3 },
+  { status: 'Failed', count: 36, percentage: 2.9 },
+];
+
+export const mockProcessingTimeData: ProcessingTimeData[] = [
+  { date: '2026-01-01', avgTime: 4.8, minTime: 2.1, maxTime: 12.3 },
+  { date: '2026-01-02', avgTime: 4.5, minTime: 2.0, maxTime: 11.8 },
+  { date: '2026-01-03', avgTime: 4.2, minTime: 1.9, maxTime: 10.5 },
+  { date: '2026-01-04', avgTime: 4.0, minTime: 1.8, maxTime: 9.8 },
+  { date: '2026-01-05', avgTime: 3.9, minTime: 1.7, maxTime: 9.2 },
+  { date: '2026-01-06', avgTime: 4.1, minTime: 1.8, maxTime: 10.1 },
+  { date: '2026-01-07', avgTime: 4.2, minTime: 1.9, maxTime: 10.8 },
+];
+
+export const mockRiskDistribution: RiskDistribution[] = [
+  { riskLevel: 'High Risk', count: 87, percentage: 7.1 },
+  { riskLevel: 'Medium Risk', count: 234, percentage: 19.0 },
+  { riskLevel: 'Low Risk', count: 612, percentage: 49.6 },
+  { riskLevel: 'No Risk', count: 301, percentage: 24.4 },
+];
+
+export const mockTopVendors: VendorVolume[] = [
+  { vendorName: 'Acme Corp', invoiceCount: 87, totalAmount: 456789 },
+  { vendorName: 'Global Supplies Inc', invoiceCount: 65, totalAmount: 398456 },
+  { vendorName: 'Tech Solutions Ltd', invoiceCount: 54, totalAmount: 321098 },
+  { vendorName: 'Office Essentials', invoiceCount: 48, totalAmount: 287654 },
+  { vendorName: 'Industrial Parts Co', invoiceCount: 42, totalAmount: 245123 },
+  { vendorName: 'Service Providers LLC', invoiceCount: 38, totalAmount: 198765 },
+  { vendorName: 'Manufacturing Group', invoiceCount: 35, totalAmount: 176543 },
+  { vendorName: 'Retail Partners', invoiceCount: 29, totalAmount: 145678 },
+  { vendorName: 'Logistics Express', invoiceCount: 24, totalAmount: 123456 },
+  { vendorName: 'Consulting Experts', invoiceCount: 21, totalAmount: 98765 },
+];
+
+export const mockSTPRateData: STPRateData[] = [
+  { week: 'Week 48', rate: 82.5, processed: 234, touchless: 193 },
+  { week: 'Week 49', rate: 84.1, processed: 256, touchless: 215 },
+  { week: 'Week 50', rate: 85.8, processed: 243, touchless: 208 },
+  { week: 'Week 51', rate: 86.4, processed: 267, touchless: 231 },
+  { week: 'Week 52', rate: 87.2, processed: 289, touchless: 252 },
+  { week: 'Week 1', rate: 88.1, processed: 301, touchless: 265 },
+  { week: 'Week 2', rate: 87.9, processed: 278, touchless: 244 },
+];
+
+export const mockRecentActivity: RecentActivity[] = [
+  {
+    id: '1',
+    type: 'approval',
+    invoiceNumber: 'INV-2026-0158',
+    description: 'Invoice approved by manager',
+    user: 'John Smith',
+    timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
+    status: 'Approved',
+  },
+  {
+    id: '2',
+    type: 'upload',
+    invoiceNumber: 'INV-2026-0159',
+    description: 'New invoice uploaded',
+    user: 'Sarah Johnson',
+    timestamp: new Date(Date.now() - 12 * 60000).toISOString(),
+    status: 'Processing',
+  },
+  {
+    id: '3',
+    type: 'risk',
+    invoiceNumber: 'INV-2026-0157',
+    description: 'High risk flag detected - duplicate vendor',
+    user: 'System',
+    timestamp: new Date(Date.now() - 18 * 60000).toISOString(),
+    status: 'Risk Review',
+  },
+  {
+    id: '4',
+    type: 'approval',
+    invoiceNumber: 'INV-2026-0156',
+    description: 'Invoice approved by manager',
+    user: 'Michael Chen',
+    timestamp: new Date(Date.now() - 25 * 60000).toISOString(),
+    status: 'Approved',
+  },
+  {
+    id: '5',
+    type: 'comment',
+    invoiceNumber: 'INV-2026-0155',
+    description: 'Comment added to invoice',
+    user: 'Emily Davis',
+    timestamp: new Date(Date.now() - 32 * 60000).toISOString(),
+  },
+  {
+    id: '6',
+    type: 'upload',
+    invoiceNumber: 'INV-2026-0154',
+    description: 'New invoice uploaded',
+    user: 'David Wilson',
+    timestamp: new Date(Date.now() - 45 * 60000).toISOString(),
+    status: 'Processing',
+  },
+  {
+    id: '7',
+    type: 'approval',
+    invoiceNumber: 'INV-2026-0153',
+    description: 'Invoice rejected - incorrect amount',
+    user: 'Lisa Anderson',
+    timestamp: new Date(Date.now() - 58 * 60000).toISOString(),
+    status: 'Rejected',
+  },
+  {
+    id: '8',
+    type: 'risk',
+    invoiceNumber: 'INV-2026-0152',
+    description: 'Medium risk flag - unusual amount',
+    user: 'System',
+    timestamp: new Date(Date.now() - 67 * 60000).toISOString(),
+    status: 'Risk Review',
+  },
+  {
+    id: '9',
+    type: 'payment',
+    invoiceNumber: 'INV-2026-0151',
+    description: 'Payment processed',
+    user: 'System',
+    timestamp: new Date(Date.now() - 75 * 60000).toISOString(),
+    status: 'Paid',
+  },
+  {
+    id: '10',
+    type: 'upload',
+    invoiceNumber: 'INV-2026-0150',
+    description: 'New invoice uploaded',
+    user: 'James Martinez',
+    timestamp: new Date(Date.now() - 89 * 60000).toISOString(),
+    status: 'Processing',
+  },
+  {
+    id: '11',
+    type: 'approval',
+    invoiceNumber: 'INV-2026-0149',
+    description: 'Invoice approved by manager',
+    user: 'Robert Taylor',
+    timestamp: new Date(Date.now() - 102 * 60000).toISOString(),
+    status: 'Approved',
+  },
+  {
+    id: '12',
+    type: 'comment',
+    invoiceNumber: 'INV-2026-0148',
+    description: 'Comment added to invoice',
+    user: 'Patricia Brown',
+    timestamp: new Date(Date.now() - 115 * 60000).toISOString(),
+  },
+  {
+    id: '13',
+    type: 'risk',
+    invoiceNumber: 'INV-2026-0147',
+    description: 'Low risk flag - vendor verification',
+    user: 'System',
+    timestamp: new Date(Date.now() - 128 * 60000).toISOString(),
+    status: 'Risk Review',
+  },
+  {
+    id: '14',
+    type: 'upload',
+    invoiceNumber: 'INV-2026-0146',
+    description: 'New invoice uploaded',
+    user: 'Jennifer Garcia',
+    timestamp: new Date(Date.now() - 141 * 60000).toISOString(),
+    status: 'Processing',
+  },
+  {
+    id: '15',
+    type: 'approval',
+    invoiceNumber: 'INV-2026-0145',
+    description: 'Invoice approved by manager',
+    user: 'William Rodriguez',
+    timestamp: new Date(Date.now() - 154 * 60000).toISOString(),
+    status: 'Approved',
+  },
+  {
+    id: '16',
+    type: 'payment',
+    invoiceNumber: 'INV-2026-0144',
+    description: 'Payment processed',
+    user: 'System',
+    timestamp: new Date(Date.now() - 167 * 60000).toISOString(),
+    status: 'Paid',
+  },
+  {
+    id: '17',
+    type: 'upload',
+    invoiceNumber: 'INV-2026-0143',
+    description: 'New invoice uploaded',
+    user: 'Mary Lee',
+    timestamp: new Date(Date.now() - 180 * 60000).toISOString(),
+    status: 'Processing',
+  },
+  {
+    id: '18',
+    type: 'approval',
+    invoiceNumber: 'INV-2026-0142',
+    description: 'Invoice escalated to auditor',
+    user: 'Thomas White',
+    timestamp: new Date(Date.now() - 193 * 60000).toISOString(),
+    status: 'Escalated',
+  },
+  {
+    id: '19',
+    type: 'comment',
+    invoiceNumber: 'INV-2026-0141',
+    description: 'Comment added to invoice',
+    user: 'Linda Harris',
+    timestamp: new Date(Date.now() - 206 * 60000).toISOString(),
+  },
+  {
+    id: '20',
+    type: 'upload',
+    invoiceNumber: 'INV-2026-0140',
+    description: 'New invoice uploaded',
+    user: 'Charles Clark',
+    timestamp: new Date(Date.now() - 219 * 60000).toISOString(),
+    status: 'Processing',
+  },
+];

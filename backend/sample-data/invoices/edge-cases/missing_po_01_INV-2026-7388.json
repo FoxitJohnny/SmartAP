@@ -1,0 +1,33 @@
+{
+  "invoice_number": "INV-2026-7388",
+  "po_number": null,
+  "vendor": {
+    "name": "Office Supply Co",
+    "address": "100 Supply St, Denver, CO 80201",
+    "tax_id": "11-2233445"
+  },
+  "customer": {
+    "name": "Acme Corp",
+    "address": "123 Main St, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "invoice_date": "2025-11-07",
+  "due_date": "2025-12-07",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Office Chair - Ergonomic",
+      "sku": "OC-ERG-001",
+      "quantity": 5,
+      "unit_price": 299.99,
+      "total": 1499.95
+    }
+  ],
+  "subtotal": 1499.95,
+  "tax_rate": 0,
+  "tax_amount": 0,
+  "shipping": 0,
+  "total_amount": 1499.95,
+  "payment_terms": "Net 30",
+  "invoice_type": "missing_po"
+}
