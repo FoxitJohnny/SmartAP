@@ -1,6 +1,7 @@
 # SmartAP API Routes
 # Use simplified routes for now to avoid complex import issues
 from .routes_simple import router
+from ..auth import router as auth_router
 
 # TODO: Re-enable these when agents are properly configured
 # from .esign_routes import router as esign_router
@@ -12,4 +13,4 @@ from .routes_simple import router
 # Include ERP routes
 # router.include_router(erp_router, prefix="/erp", tags=["ERP Integration"])
 
-__all__ = ["router"]
+__all__ = ["router", "auth_router"]

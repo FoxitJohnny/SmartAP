@@ -43,7 +43,22 @@ export default function RegisterPage() {
       });
       toast.success('Registration successful');
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Registration failed');
+      // Extract detailed error message from backend
+      const errorData = error?.response?.data;
+      let errorMessage = 'Registration failed';
+      
+      if (errorData?.detail) {
+        if (Array.isArray(errorData.detail)) {
+          // Handle validation errors array
+          errorMessage = errorData.detail.map((e: any) => e.msg).join('. ');
+        } else if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail;
+        }
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 

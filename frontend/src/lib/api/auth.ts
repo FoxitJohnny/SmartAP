@@ -7,12 +7,16 @@ import type { LoginRequest, LoginResponse, User } from '@/types';
 // API functions
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
+    const response = await apiClient.post<LoginResponse>('/auth/login/json', credentials);
     return response.data;
   },
 
   register: async (data: { email: string; password: string; name: string }): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>('/auth/register', data);
+    const response = await apiClient.post<LoginResponse>('/auth/register', {
+      email: data.email,
+      password: data.password,
+      full_name: data.name,  // Backend expects full_name
+    });
     return response.data;
   },
 

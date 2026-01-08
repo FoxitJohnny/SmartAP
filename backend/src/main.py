@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .api import router
+from .api import router, auth_router
 
 
 @asynccontextmanager
@@ -102,6 +102,10 @@ def create_app() -> FastAPI:
                 "name": "health",
                 "description": "Health check and system status endpoints.",
             },
+            {
+                "name": "authentication",
+                "description": "User authentication, registration, and token management.",
+            },
         ],
     )
     
@@ -116,6 +120,7 @@ def create_app() -> FastAPI:
     
     # Include API routes
     app.include_router(router)
+    app.include_router(auth_router)
     
     return app
 
