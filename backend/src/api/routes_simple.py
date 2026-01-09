@@ -184,3 +184,182 @@ async def health_check() -> dict:
         "service": "smartap-api",
         "version": "0.1.0",
     }
+
+
+@router.get(
+    "/health/detailed",
+    tags=["health"],
+    summary="Detailed health check",
+    description="Check health of all system components including database, cache, and services",
+)
+async def detailed_health_check(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> dict:
+    """Comprehensive health check for all components."""
+    from datetime import datetime
+    
+    health_status = {
+        "status": "healthy",
+        "service": "smartap-api",
+        "version": settings.app_version,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "components": {},
+    }
+    
+    issues = []
+    
+    # Check database
+    try:
+        from ..db.database import async_session_maker
+        from sqlalchemy import text
+        
+        async with async_session_maker() as session:
+            await session.execute(text("SELECT 1"))
+        health_status["components"]["database"] = {"status": "healthy", "type": "postgresql"}
+    except Exception as e:
+        health_status["components"]["database"] = {"status": "unhealthy", "error": str(e)}
+        issues.append("database")
+    
+    # Check Redis cache
+    try:
+        import redis.asyncio as redis
+        
+        r = redis.from_url(settings.redis_url, decode_responses=True)
+        await r.ping()
+        await r.close()
+        health_status["components"]["cache"] = {"status": "healthy", "type": "redis"}
+    except Exception as e:
+        health_status["components"]["cache"] = {"status": "unhealthy", "error": str(e)}
+        issues.append("cache")
+    
+    # Check AI service
+    if settings.ai_provider == "github" and settings.github_token:
+        health_status["components"]["ai"] = {
+            "status": "configured",
+            "provider": "github_models",
+            "model": settings.model_id,
+        }
+    elif settings.ai_provider == "openai" and settings.openai_api_key:
+        health_status["components"]["ai"] = {
+            "status": "configured",
+            "provider": "openai",
+            "model": settings.model_id,
+        }
+    else:
+        health_status["components"]["ai"] = {
+            "status": "not_configured",
+            "message": "No AI credentials provided",
+        }
+    
+    # Check OCR service
+    if settings.foxit_api_key:
+        health_status["components"]["ocr"] = {"status": "configured", "provider": "foxit"}
+    else:
+        health_status["components"]["ocr"] = {"status": "fallback", "provider": "pytesseract_or_none"}
+    
+    # Check upload directory
+    upload_path = Path(settings.upload_dir)
+    if upload_path.exists() and os.access(upload_path, os.W_OK):
+        health_status["components"]["storage"] = {"status": "healthy", "path": str(upload_path)}
+    else:
+        health_status["components"]["storage"] = {"status": "unhealthy", "error": "Upload directory not writable"}
+        issues.append("storage")
+    
+    # Overall status
+    if issues:
+        health_status["status"] = "degraded"
+        health_status["issues"] = issues
+    
+    return health_status
+
+
+@router.get(
+    "/health/full",
+    tags=["health"],
+    summary="Full health check",
+    description="Comprehensive health check including ERP, eSign, circuit breakers, and all components",
+)
+async def full_health_check(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> dict:
+    """Full health check with all component statuses including integrations."""
+    try:
+        from ..utils.monitoring import get_health_checker
+        checker = get_health_checker(settings)
+        return await checker.get_full_health_report()
+    except ImportError:
+        # Fallback if monitoring module not available
+        return await detailed_health_check(settings)
+
+
+@router.get(
+    "/metrics",
+    tags=["health"],
+    summary="Application metrics",
+    description="Get application performance metrics including request stats and service call metrics",
+)
+async def get_metrics(
+    minutes: int = 60,
+) -> dict:
+    """Get application metrics for the specified time window."""
+    try:
+        from ..utils.monitoring import get_metrics_collector
+        collector = get_metrics_collector()
+        return collector.get_summary(minutes=minutes)
+    except ImportError:
+        return {
+            "error": "Metrics collector not available",
+            "message": "Install monitoring module for metrics",
+        }
+
+
+@router.get(
+    "/metrics/endpoints",
+    tags=["health"],
+    summary="Endpoint metrics",
+    description="Get detailed metrics for each endpoint",
+)
+async def get_endpoint_metrics() -> dict:
+    """Get detailed per-endpoint metrics."""
+    try:
+        from ..utils.monitoring import get_metrics_collector
+        collector = get_metrics_collector()
+        return {
+            "endpoints": collector.get_endpoint_stats(),
+        }
+    except ImportError:
+        return {
+            "error": "Metrics collector not available",
+        }
+
+
+@router.get(
+    "/metrics/circuit-breakers",
+    tags=["health"],
+    summary="Circuit breaker status",
+    description="Get status of all circuit breakers for external service integrations",
+)
+async def get_circuit_breaker_status() -> dict:
+    """Get current state of all circuit breakers."""
+    try:
+        from ..utils.circuit_breaker import CircuitBreaker
+        states = CircuitBreaker.get_all_states()
+        
+        if not states:
+            return {
+                "status": "no_breakers",
+                "message": "No circuit breakers registered yet",
+                "breakers": {},
+            }
+        
+        open_count = sum(1 for s in states.values() if s.value == "open")
+        
+        return {
+            "status": "degraded" if open_count > 0 else "healthy",
+            "open_count": open_count,
+            "breakers": {name: state.value for name, state in states.items()},
+        }
+    except ImportError:
+        return {
+            "error": "Circuit breaker module not available",
+        }

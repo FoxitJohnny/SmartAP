@@ -12,13 +12,13 @@ from datetime import datetime
 import uuid
 import logging
 
-from ..db.session import get_session
+from ..db.database import get_session
 from ..services.esign_service import ESignService, ESignStatus, get_required_signers
 from ..models.esign import ESignRequest, ESignSigner, ESignAuditLog, ESignWebhook, SignerStatus
 from ..config import get_settings
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/esign", tags=["esign"])
+router = APIRouter(prefix="/api/v1/esign", tags=["esign"])
 
 
 def get_esign_service() -> ESignService:

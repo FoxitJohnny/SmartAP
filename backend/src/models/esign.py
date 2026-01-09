@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Optional
 from sqlalchemy import Column, String, Float, DateTime, JSON, ForeignKey, Enum as SQLEnum, Integer
 from sqlalchemy.orm import relationship
-from ..db.base import Base
+from ..db.models import Base
 import enum
 
 
@@ -44,8 +44,8 @@ class ESignRequest(Base):
     # Foxit eSign integration
     foxit_request_id = Column(String, unique=True, index=True, nullable=False)
     
-    # Invoice reference
-    invoice_id = Column(String, ForeignKey("invoice_documents.id"), nullable=False, index=True)
+    # Invoice reference - stores document_id from invoice system
+    invoice_id = Column(String, nullable=False, index=True)
     invoice_number = Column(String, nullable=False)
     invoice_amount = Column(Float, nullable=False)
     vendor_name = Column(String, nullable=False)

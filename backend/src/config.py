@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     
+    # Security / CORS Configuration
+    cors_origins: str = Field(default="http://localhost:3000,http://localhost:8000", description="Comma-separated list of allowed CORS origins. Use '*' for development only.")
+    cors_allow_credentials: bool = Field(default=True, description="Allow credentials in CORS requests")
+    cors_allow_methods: str = Field(default="GET,POST,PUT,DELETE,PATCH,OPTIONS", description="Comma-separated allowed HTTP methods")
+    cors_allow_headers: str = Field(default="*", description="Comma-separated allowed headers")
+    
     # AI Model Configuration
     # Using GitHub Models endpoint (free tier for development)
     ai_provider: str = Field(default="github", description="AI provider: 'github', 'openai', or 'azure'")

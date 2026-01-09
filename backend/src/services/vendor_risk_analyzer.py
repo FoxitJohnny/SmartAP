@@ -5,9 +5,11 @@ Analyzes vendor risk based on history, patterns, and fraud flags.
 """
 
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
+from decimal import Decimal
 
-from ..models import Vendor, VendorRiskInfo, RiskLevel
+from ..models import Vendor, VendorRiskProfile, VendorStatus
+from ..models.risk import VendorRiskInfo, RiskLevel
 from ..db.repositories import VendorRepository
 
 
@@ -19,9 +21,9 @@ class VendorRiskAnalyzer:
     MEDIUM_RISK_THRESHOLD = 0.50
     HIGH_RISK_THRESHOLD = 0.75
     
-    # Payment history thresholds
-    GOOD_PAYMENT_RATE = 0.90
-    ACCEPTABLE_PAYMENT_RATE = 0.75
+    # Payment reliability thresholds
+    GOOD_PAYMENT_RELIABILITY = 0.90
+    ACCEPTABLE_PAYMENT_RELIABILITY = 0.75
     
     # Activity thresholds
     INACTIVE_DAYS = 180
@@ -48,79 +50,105 @@ class VendorRiskAnalyzer:
             return 0.80, VendorRiskInfo(
                 vendor_id=vendor_id,
                 vendor_name="Unknown",
-                vendor_status="unknown",
-                risk_score=0.80,
-                on_time_payment_rate=0.0,
-                invoice_count=0,
-                days_since_last_payment=9999,
-                has_fraud_flags=False,
+                vendor_risk_score=0.80,
                 is_new_vendor=True,
-                is_inactive=False,
+                is_blocked=False,
+                active_fraud_flags=0,
+                average_invoice_amount=Decimal("0.0"),
+                invoice_amount_std_dev=Decimal("0.0"),
+                total_invoices=0,
             )
         
-        # Parse vendor data
-        vendor = Vendor.model_validate(vendor_db)
-        risk_profile = vendor.risk_profile
+        # Get risk profile from vendor
+        risk_profile = vendor_db.risk_profile or {}
         
         # Calculate risk components
         risk_score = 0.0
         
         # 1. Base risk from profile (40%)
-        base_risk = risk_profile.risk_score
+        base_risk = risk_profile.get('risk_score', 0.5)
         risk_score += base_risk * 0.40
         
-        # 2. Payment history risk (30%)
-        payment_risk = self._calculate_payment_risk(risk_profile.on_time_payment_rate)
+        # 2. Payment reliability risk (30%)
+        payment_reliability = risk_profile.get('payment_reliability_score', 0.5)
+        payment_risk = self._calculate_payment_risk(payment_reliability)
         risk_score += payment_risk * 0.30
         
         # 3. Activity risk (20%)
+        last_payment_date = risk_profile.get('last_payment_date')
+        total_invoices = risk_profile.get('total_invoices_processed', 0)
+        onboarded_date = vendor_db.onboarded_date
+        
+        days_since_payment = self._days_since_payment(last_payment_date)
         activity_risk = self._calculate_activity_risk(
-            risk_profile.days_since_last_payment,
-            risk_profile.invoice_count,
-            vendor.onboarded_date
+            days_since_payment,
+            total_invoices,
+            onboarded_date
         )
         risk_score += activity_risk * 0.20
         
         # 4. Fraud flag risk (10%)
-        fraud_risk = 1.0 if risk_profile.has_fraud_history else 0.0
+        active_fraud_flags = risk_profile.get('active_fraud_flags', 0)
+        fraud_risk = min(1.0, active_fraud_flags * 0.25) if active_fraud_flags > 0 else 0.0
         risk_score += fraud_risk * 0.10
         
+        # Ensure score is between 0 and 1
+        risk_score = max(0.0, min(1.0, risk_score))
+        
+        # Check if vendor is blocked
+        is_blocked = vendor_db.status == VendorStatus.BLOCKED or vendor_db.status == VendorStatus.SUSPENDED
+        
         # Create risk info
-        is_new = self._is_new_vendor(vendor.onboarded_date)
-        is_inactive = self._is_inactive_vendor(risk_profile.days_since_last_payment)
+        is_new = self._is_new_vendor(onboarded_date)
         
         risk_info = VendorRiskInfo(
-            vendor_id=vendor.vendor_id,
-            vendor_name=vendor.vendor_name,
-            vendor_status=vendor.status.value,
-            risk_score=risk_score,
-            on_time_payment_rate=risk_profile.on_time_payment_rate,
-            invoice_count=risk_profile.invoice_count,
-            days_since_last_payment=risk_profile.days_since_last_payment,
-            has_fraud_flags=risk_profile.has_fraud_history,
-            fraud_flag_count=risk_profile.fraud_flag_count,
+            vendor_id=vendor_db.vendor_id,
+            vendor_name=vendor_db.vendor_name,
+            vendor_risk_score=risk_score,
             is_new_vendor=is_new,
-            is_inactive=is_inactive,
+            is_blocked=is_blocked,
+            active_fraud_flags=active_fraud_flags,
+            average_invoice_amount=Decimal(str(risk_profile.get('average_invoice_amount', 0.0))),
+            invoice_amount_std_dev=Decimal("0.0"),  # Would need historical calculation
+            total_invoices=total_invoices,
         )
         
         return risk_score, risk_info
     
-    def _calculate_payment_risk(self, on_time_rate: float) -> float:
-        """Calculate risk based on payment history."""
-        if on_time_rate >= self.GOOD_PAYMENT_RATE:
+    def _days_since_payment(self, last_payment_date) -> int:
+        """Calculate days since last payment."""
+        if not last_payment_date:
+            return 9999  # No payment history = high risk indicator
+        
+        # Handle string date format from JSON
+        if isinstance(last_payment_date, str):
+            try:
+                last_payment_date = datetime.fromisoformat(last_payment_date).date()
+            except ValueError:
+                return 9999
+        elif isinstance(last_payment_date, datetime):
+            last_payment_date = last_payment_date.date()
+        
+        return (date.today() - last_payment_date).days
+    
+    def _calculate_payment_risk(self, payment_reliability: float) -> float:
+        """Calculate risk based on payment reliability score."""
+        if payment_reliability >= self.GOOD_PAYMENT_RELIABILITY:
             return 0.0
-        elif on_time_rate >= self.ACCEPTABLE_PAYMENT_RATE:
+        elif payment_reliability >= self.ACCEPTABLE_PAYMENT_RELIABILITY:
             # Linear scale from 0.0 to 0.5
-            return (self.GOOD_PAYMENT_RATE - on_time_rate) / (self.GOOD_PAYMENT_RATE - self.ACCEPTABLE_PAYMENT_RATE) * 0.5
+            return (self.GOOD_PAYMENT_RELIABILITY - payment_reliability) / \
+                   (self.GOOD_PAYMENT_RELIABILITY - self.ACCEPTABLE_PAYMENT_RELIABILITY) * 0.5
         else:
             # Linear scale from 0.5 to 1.0
-            return 0.5 + ((self.ACCEPTABLE_PAYMENT_RATE - on_time_rate) / self.ACCEPTABLE_PAYMENT_RATE) * 0.5
+            return 0.5 + ((self.ACCEPTABLE_PAYMENT_RELIABILITY - payment_reliability) / 
+                          self.ACCEPTABLE_PAYMENT_RELIABILITY) * 0.5
     
     def _calculate_activity_risk(
         self,
         days_since_last_payment: int,
         invoice_count: int,
-        onboarded_date: datetime
+        onboarded_date
     ) -> float:
         """Calculate risk based on vendor activity."""
         # New vendor (limited history)
@@ -132,7 +160,7 @@ class VendorRiskAnalyzer:
             return 0.60
         
         # Inactive vendor
-        if self._is_inactive_vendor(days_since_last_payment):
+        if days_since_last_payment > self.INACTIVE_DAYS:
             return 0.70
         
         # Recent activity (last 30 days)
@@ -151,14 +179,16 @@ class VendorRiskAnalyzer:
         else:
             return 0.70
     
-    def _is_new_vendor(self, onboarded_date: datetime) -> bool:
+    def _is_new_vendor(self, onboarded_date) -> bool:
         """Check if vendor is new (less than 90 days)."""
-        days_since_onboarding = (datetime.now() - onboarded_date).days
+        if not onboarded_date:
+            return True
+        
+        if isinstance(onboarded_date, datetime):
+            onboarded_date = onboarded_date.date()
+        
+        days_since_onboarding = (date.today() - onboarded_date).days
         return days_since_onboarding < self.NEW_VENDOR_DAYS
-    
-    def _is_inactive_vendor(self, days_since_last_payment: int) -> bool:
-        """Check if vendor is inactive (more than 180 days)."""
-        return days_since_last_payment > self.INACTIVE_DAYS
     
     def get_risk_level(self, risk_score: float) -> RiskLevel:
         """Convert risk score to risk level."""

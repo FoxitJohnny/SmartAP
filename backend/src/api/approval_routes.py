@@ -26,8 +26,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 
-from backend.src.database import get_db
-from backend.src.models.approval import (
+from ..db.database import get_session as get_db
+from ..models.approval import (
     ApprovalChain,
     ApprovalLevel,
     ApprovalWorkflow,
@@ -38,14 +38,13 @@ from backend.src.models.approval import (
     ApproverAction,
     EscalationReason,
 )
-from backend.src.models.invoice import InvoiceDocument
-from backend.src.integrations.foxit.esign import FoxitESignConnector, SignerRole
-from backend.src.services.archival_service import ArchivalService
-from backend.src.auth import get_current_user
-from backend.src.models.users import User
-from backend.src.config import Config
+from ..models.invoice import Invoice
+from ..integrations.foxit.esign import FoxitESignConnector, SignerRole
+from ..services.archival_service import ArchivalService
+from ..auth import get_current_user, User
+from ..config import get_settings
 
-router = APIRouter(prefix="/approvals", tags=["Approval Workflows"])
+router = APIRouter(prefix="/api/v1/approvals", tags=["Approval Workflows"])
 
 # Pydantic schemas for request/response validation
 from pydantic import BaseModel, Field, EmailStr
@@ -656,11 +655,11 @@ async def trigger_esign(
         )
     
     # Initialize Foxit eSign connector
-    config = Config()
+    settings = get_settings()
     esign_connector = FoxitESignConnector(
-        api_key=config.foxit_esign_api_key,
-        api_secret=config.foxit_esign_api_secret,
-        base_url=config.foxit_esign_base_url
+        api_key=settings.foxit_esign_api_key,
+        api_secret=settings.foxit_esign_api_secret,
+        base_url=settings.foxit_esign_base_url
     )
     
     try:

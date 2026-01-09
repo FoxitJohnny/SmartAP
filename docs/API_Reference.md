@@ -1315,7 +1315,8 @@ GET /api/v1/health
 ```json
 {
   "status": "healthy",
-  "timestamp": "2026-01-08T12:00:00Z"
+  "service": "smartap-api",
+  "version": "0.1.0"
 }
 ```
 
@@ -1323,23 +1324,162 @@ GET /api/v1/health
 
 ```http
 GET /api/v1/health/detailed
-Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
 ```json
 {
   "status": "healthy",
-  "timestamp": "2026-01-08T12:00:00Z",
-  "version": "1.0.0",
-  "checks": {
-    "database": {"status": "healthy", "latency_ms": 5},
-    "redis": {"status": "healthy", "latency_ms": 2},
-    "rabbitmq": {"status": "healthy", "latency_ms": 8},
-    "storage": {"status": "healthy"}
+  "service": "smartap-api",
+  "version": "0.1.0",
+  "timestamp": "2026-01-09T12:00:00Z",
+  "components": {
+    "database": {"status": "healthy", "type": "postgresql"},
+    "cache": {"status": "healthy", "type": "redis"},
+    "ai": {"status": "configured", "provider": "github_models", "model": "openai/gpt-4.1"},
+    "ocr": {"status": "configured", "provider": "foxit"},
+    "storage": {"status": "healthy", "path": "./uploads"}
+  },
+  "issues": null
+}
+```
+
+### Full Health Check
+
+```http
+GET /api/v1/health/full
+```
+
+Comprehensive health check including ERP integrations, eSign, and circuit breakers.
+
+**Response (200 OK):**
+```json
+{
+  "status": "healthy",
+  "service": "smartap-api",
+  "version": "0.1.0",
+  "timestamp": "2026-01-09T12:00:00Z",
+  "components": {
+    "database": {"status": "healthy", "type": "postgresql", "latency_ms": 5.2},
+    "cache": {"status": "healthy", "type": "redis", "latency_ms": 1.8, "memory_used_mb": 24.5},
+    "ai": {"status": "configured", "provider": "github_models", "model": "openai/gpt-4.1"},
+    "ocr": {"status": "configured", "provider": "foxit"},
+    "erp": {"status": "configured", "providers": {"xero": {"status": "configured"}, "quickbooks": {"status": "configured"}}, "sync_enabled": true},
+    "esign": {"status": "configured", "provider": "foxit_esign"},
+    "circuit_breakers": {"status": "healthy", "breakers": {"foxit_ocr": "closed", "erp_sync": "closed", "ai_service": "closed"}, "open_count": 0},
+    "storage": {"status": "healthy", "upload_dir": "./uploads", "disk_free_gb": 45.2, "disk_used_percent": 32.5}
+  },
+  "issues": null
+}
+```
+
+**Response Status Codes:**
+| Status | Health Status | Description |
+|--------|--------------|-------------|
+| `200` | `healthy` | All components operational |
+| `200` | `degraded` | Some non-critical components failing |
+| `503` | `unhealthy` | Critical components (database, storage) failing |
+
+### Application Metrics
+
+```http
+GET /api/v1/metrics?minutes=60
+```
+
+Get application performance metrics for the specified time window.
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `minutes` | integer | 60 | Time window in minutes |
+
+**Response (200 OK):**
+```json
+{
+  "window_minutes": 60,
+  "total_requests": 1523,
+  "total_errors": 12,
+  "error_rate": 0.79,
+  "avg_duration_ms": 145.32,
+  "top_endpoints": [
+    {"endpoint": "GET /api/v1/invoices", "count": 450},
+    {"endpoint": "POST /api/v1/upload", "count": 125},
+    {"endpoint": "GET /api/v1/dashboard/stats", "count": 98}
+  ],
+  "slowest_endpoints": [
+    {"endpoint": "POST /api/v1/process", "avg_ms": 2345.67},
+    {"endpoint": "POST /api/v1/upload", "avg_ms": 890.45}
+  ],
+  "service_calls": {
+    "foxit_ocr": {"total": 45, "success": 43, "failure": 2, "total_duration_ms": 12500.0},
+    "ai_extraction": {"total": 45, "success": 45, "failure": 0, "total_duration_ms": 8900.0}
+  },
+  "uptime_seconds": 86400.5
+}
+```
+
+### Endpoint Metrics
+
+```http
+GET /api/v1/metrics/endpoints
+```
+
+Get detailed per-endpoint statistics.
+
+**Response (200 OK):**
+```json
+{
+  "endpoints": {
+    "GET /api/v1/invoices": {
+      "total_requests": 450,
+      "total_errors": 3,
+      "error_rate": 0.67,
+      "avg_duration_ms": 45.2,
+      "min_duration_ms": 12.5,
+      "max_duration_ms": 234.8,
+      "status_codes": {"200": 447, "500": 3}
+    },
+    "POST /api/v1/upload": {
+      "total_requests": 125,
+      "total_errors": 5,
+      "error_rate": 4.0,
+      "avg_duration_ms": 890.45,
+      "min_duration_ms": 250.0,
+      "max_duration_ms": 3500.0,
+      "status_codes": {"201": 120, "400": 3, "500": 2}
+    }
   }
 }
 ```
+
+### Circuit Breaker Status
+
+```http
+GET /api/v1/metrics/circuit-breakers
+```
+
+Get current state of all circuit breakers for external service integrations.
+
+**Response (200 OK):**
+```json
+{
+  "status": "healthy",
+  "open_count": 0,
+  "breakers": {
+    "foxit_ocr": "closed",
+    "foxit_esign": "closed",
+    "erp_sync": "closed",
+    "ai_service": "closed"
+  }
+}
+```
+
+**Circuit Breaker States:**
+| State | Description |
+|-------|-------------|
+| `closed` | Normal operation - requests passing through |
+| `open` | Service failing - requests blocked, retry after timeout |
+| `half_open` | Testing - limited requests allowed to test recovery |
 
 ### System Settings
 
@@ -1372,21 +1512,70 @@ Authorization: Bearer {token}
 | `500` | Internal Server Error | Server error |
 | `503` | Service Unavailable | Service temporarily unavailable |
 
-### Error Codes
+### Application Error Codes
 
-| Code | Description |
-|------|-------------|
-| `VALIDATION_ERROR` | Request validation failed |
-| `AUTHENTICATION_ERROR` | Authentication failed |
-| `AUTHORIZATION_ERROR` | Permission denied |
-| `NOT_FOUND` | Resource not found |
-| `CONFLICT` | Resource already exists |
-| `RATE_LIMIT_EXCEEDED` | Too many requests |
-| `PROCESSING_ERROR` | Invoice processing failed |
-| `EXTRACTION_ERROR` | AI extraction failed |
-| `MATCHING_ERROR` | PO matching failed |
-| `ERP_SYNC_ERROR` | ERP synchronization failed |
-| `INTERNAL_ERROR` | Internal server error |
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `VALIDATION_ERROR` | 400 | Request validation failed |
+| `AUTHENTICATION_ERROR` | 401 | Authentication failed |
+| `AUTHORIZATION_ERROR` | 403 | Permission denied |
+| `NOT_FOUND` | 404 | Resource not found |
+| `CONFLICT` | 409 | Resource already exists |
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
+| `CIRCUIT_BREAKER_OPEN` | 503 | External service unavailable (circuit open) |
+| `EXTERNAL_SERVICE_ERROR` | 502 | External service call failed |
+| `PROCESSING_ERROR` | 500 | Invoice processing failed |
+| `EXTRACTION_ERROR` | 500 | AI extraction failed |
+| `MATCHING_ERROR` | 500 | PO matching failed |
+| `ERP_SYNC_ERROR` | 502 | ERP synchronization failed |
+| `INTERNAL_ERROR` | 500 | Internal server error |
+
+### Error Response Format
+
+All errors follow a consistent format:
+
+```json
+{
+  "error_code": "VALIDATION_ERROR",
+  "message": "Request validation failed",
+  "detail": "vendor_id must be a valid UUID",
+  "suggestions": [
+    "Verify the vendor_id format is a valid UUID",
+    "Check that the vendor exists in the system"
+  ],
+  "path": "/api/v1/invoices"
+}
+```
+
+**Error Response Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `error_code` | string | Machine-readable error code |
+| `message` | string | Human-readable error message |
+| `detail` | string/null | Additional error details (when available) |
+| `suggestions` | array/null | Suggested actions to resolve the error |
+| `path` | string | Request path that caused the error |
+
+### Circuit Breaker Error
+
+When a circuit breaker is open, the response includes a `Retry-After` header:
+
+```http
+HTTP/1.1 503 Service Unavailable
+Retry-After: 30
+Content-Type: application/json
+
+{
+  "error_code": "CIRCUIT_BREAKER_OPEN",
+  "message": "Service foxit_ocr is temporarily unavailable",
+  "detail": "Circuit breaker is open due to repeated failures",
+  "suggestions": [
+    "Wait 30 seconds before retrying",
+    "Check service status at /api/v1/metrics/circuit-breakers"
+  ],
+  "path": "/api/v1/upload"
+}
+```
 
 ### Error Response Example
 

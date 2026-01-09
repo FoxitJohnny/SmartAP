@@ -10,10 +10,11 @@ from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 
-from ..database import get_db
+from ..db.database import get_session as get_db
 from ..models.erp import (
     ERPConnection,
     ERPSyncLog,
@@ -29,10 +30,9 @@ from ..integrations.erp.base import ERPConnector, SyncResult
 from ..integrations.erp.quickbooks import QuickBooksConnector
 from ..integrations.erp.xero import XeroConnector
 from ..integrations.erp.sap import SAPConnector
-from ..auth import get_current_user
-from ..models.users import User
+from ..auth import get_current_user, User
 
-router = APIRouter(prefix="/erp", tags=["ERP Integration"])
+router = APIRouter(prefix="/api/v1/erp", tags=["ERP Integration"])
 
 
 # Pydantic schemas for request/response validation

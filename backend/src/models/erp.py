@@ -3,14 +3,14 @@ ERP Integration Database Models
 Track ERP connections, sync history, and field mappings
 """
 
-from sqlalchemy import Column, String, DateTime, Boolean, Integer, Text, JSON, Enum as SQLEnum, Index
+from sqlalchemy import Column, String, DateTime, Boolean, Integer, Text, JSON, Enum as SQLEnum, Index, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 import enum
 
-from ..database import Base
+from ..db.models import Base
 
 
 class ERPSystemType(str, enum.Enum):
@@ -114,7 +114,7 @@ class ERPSyncLog(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Connection reference
-    connection_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    connection_id = Column(UUID(as_uuid=True), ForeignKey("erp_connections.id"), nullable=False, index=True)
     
     # Sync details
     entity_type = Column(SQLEnum(ERPEntityType), nullable=False, index=True)
@@ -167,7 +167,7 @@ class ERPFieldMapping(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Connection reference
-    connection_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    connection_id = Column(UUID(as_uuid=True), ForeignKey("erp_connections.id"), nullable=False, index=True)
     
     # Entity mapping
     entity_type = Column(SQLEnum(ERPEntityType), nullable=False, index=True)

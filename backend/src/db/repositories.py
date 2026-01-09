@@ -226,7 +226,7 @@ class VendorRepository:
             status=vendor.status,
             payment_terms=vendor.payment_terms,
             currency=vendor.currency,
-            risk_profile=vendor.risk_profile.model_dump(),
+            risk_profile=vendor.risk_profile.model_dump(mode='json'),
             onboarded_date=vendor.onboarded_date,
             notes=vendor.notes,
         )

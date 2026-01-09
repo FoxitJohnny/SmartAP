@@ -132,6 +132,11 @@ class POLineItemDB(Base):
     sku: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     unit: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     received_quantity: Mapped[float] = mapped_column(Float, default=0.0)
+    
+    # Relationship back to purchase order
+    purchase_order: Mapped["PurchaseOrderDB"] = relationship(back_populates="line_items")
+
+
 class VendorDB(Base):
     """Vendor database model."""
     __tablename__ = "vendors"
@@ -328,3 +333,66 @@ class RiskAssessmentDB(Base):
     
     # Relationship
     invoice: Mapped["InvoiceDB"] = relationship(back_populates="risk_assessments")
+
+
+class UserDB(Base):
+    """User database model for authentication and authorization."""
+    __tablename__ = "users"
+    
+    __table_args__ = (
+        {"comment": "User accounts for authentication"}
+    )
+    
+    # Primary key
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    
+    # User identifiers
+    user_id: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    
+    # Profile
+    full_name: Mapped[str] = mapped_column(String(255))
+    department: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    
+    # Authentication
+    hashed_password: Mapped[str] = mapped_column(String(255))
+    
+    # Role and permissions
+    role: Mapped[str] = mapped_column(String(50), default="viewer")
+    
+    # Status
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    
+    # Password reset
+    password_reset_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    password_reset_expires: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+
+class RefreshTokenDB(Base):
+    """Refresh token database model for JWT token management."""
+    __tablename__ = "refresh_tokens"
+    
+    # Primary key
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    
+    # Token data
+    token: Mapped[str] = mapped_column(String(500), unique=True, index=True)
+    user_id: Mapped[str] = mapped_column(String(50), ForeignKey("users.user_id"), index=True)
+    
+    # Expiration
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    
+    # Status
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    
+    # Metadata
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)

@@ -3,6 +3,8 @@ from .database import (
     engine,
     async_session_maker,
     get_session,
+    get_sync_session,
+    SessionLocal,
     init_db,
 )
 from .models import (
@@ -24,11 +26,16 @@ from .repositories import (
     RiskRepository,
 )
 
+# Alias for consistency
+RiskAssessmentRepository = RiskRepository
+
 __all__ = [
     # Database
     "engine",
     "async_session_maker",
     "get_session",
+    "get_sync_session",
+    "SessionLocal",
     "init_db",
     # Models
     "Base",
@@ -46,4 +53,5 @@ __all__ = [
     "VendorRepository",
     "MatchingRepository",
     "RiskRepository",
+    "RiskAssessmentRepository",
 ]

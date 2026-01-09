@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from sqlalchemy import Column, String, Float, DateTime, JSON, ForeignKey, Enum as SQLEnum, Integer, Boolean, Text
 from sqlalchemy.orm import relationship
-from ..db.base import Base
+from ..db.models import Base
 import enum
 import uuid
 
@@ -149,8 +149,8 @@ class ApprovalWorkflow(Base):
     
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     
-    # Invoice reference
-    invoice_id = Column(String, ForeignKey("invoice_documents.id"), nullable=False, index=True, unique=True)
+    # Invoice reference (uses document_id which is the string UUID)
+    invoice_id = Column(String, ForeignKey("invoices.document_id"), nullable=False, index=True, unique=True)
     invoice_number = Column(String, nullable=False, index=True)
     invoice_amount = Column(Integer, nullable=False)  # In cents
     vendor_name = Column(String, nullable=False)
@@ -301,8 +301,8 @@ class ArchivedDocument(Base):
     
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     
-    # Invoice reference
-    invoice_id = Column(String, ForeignKey("invoice_documents.id"), nullable=False, index=True, unique=True)
+    # Invoice reference (uses document_id which is the string UUID)
+    invoice_id = Column(String, ForeignKey("invoices.document_id"), nullable=False, index=True, unique=True)
     invoice_number = Column(String, nullable=False, index=True)
     invoice_amount = Column(Integer, nullable=False)
     vendor_name = Column(String, nullable=False)

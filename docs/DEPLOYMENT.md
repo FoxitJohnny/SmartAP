@@ -298,12 +298,63 @@ appendonly: yes  # AOF persistence
 
 ## Monitoring & Logging
 
-### Health Checks
+### Health Check Endpoints
 
+SmartAP provides multiple health check endpoints for different monitoring needs:
+
+| Endpoint | Auth | Description | Use Case |
+|----------|------|-------------|----------|
+| `/api/v1/health` | No | Basic health check | Load balancer probes |
+| `/api/v1/health/detailed` | No | Component-level health | Kubernetes readiness |
+| `/api/v1/health/full` | No | Full system health | Deep diagnostics |
+| `/api/v1/metrics` | No | Performance metrics | APM integration |
+| `/api/v1/metrics/endpoints` | No | Per-endpoint stats | Performance tuning |
+| `/api/v1/metrics/circuit-breakers` | No | Circuit breaker status | Integration monitoring |
+
+**Health Check Examples:**
 ```bash
-# API health
+# Basic health (for load balancers)
 curl http://localhost:8000/api/v1/health
 
+# Detailed health (for Kubernetes readiness)
+curl http://localhost:8000/api/v1/health/detailed
+
+# Full health with integrations
+curl http://localhost:8000/api/v1/health/full
+
+# Application metrics (last 60 minutes)
+curl http://localhost:8000/api/v1/metrics?minutes=60
+
+# Circuit breaker status
+curl http://localhost:8000/api/v1/metrics/circuit-breakers
+```
+
+### Kubernetes Probes Configuration
+
+```yaml
+# In k8s/api-deployment.yaml
+livenessProbe:
+  httpGet:
+    path: /api/v1/health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/v1/health/detailed
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+```
+
+### Database and Redis Health
+
+```bash
 # Database connection
 kubectl exec -it deployment/smartap-postgres -n smartap -- pg_isready -U smartap
 

@@ -1,9 +1,31 @@
 'use client';
 
+import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useDashboardMetrics, useRecentActivity } from '@/lib/api/analytics';
+import { format } from 'date-fns';
+import { FileTextIcon, CheckCircleIcon, AlertTriangleIcon, DollarSignIcon, ClockIcon, Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
+  const { data: metrics, isLoading: metricsLoading } = useDashboardMetrics();
+  const { data: recentActivity, isLoading: activityLoading } = useRecentActivity(10);
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'upload':
+        return <FileTextIcon className="h-4 w-4 text-blue-500" />;
+      case 'approval':
+        return <CheckCircleIcon className="h-4 w-4 text-green-500" />;
+      case 'risk':
+        return <AlertTriangleIcon className="h-4 w-4 text-orange-500" />;
+      case 'payment':
+        return <DollarSignIcon className="h-4 w-4 text-emerald-500" />;
+      default:
+        return <FileTextIcon className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -19,92 +41,88 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
-              <svg
-                className="h-4 w-4 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
+              <FileTextIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">No invoices yet</p>
+              {metricsLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {metrics?.totalInvoices?.value ?? 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {metrics?.totalInvoices?.change !== undefined && (
+                      <span className={metrics.totalInvoices.trend === 'up' ? 'text-green-600' : 'text-red-600'}>
+                        {metrics.totalInvoices.change > 0 ? '+' : ''}{metrics.totalInvoices.change}%
+                      </span>
+                    )} from last period
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
-              <svg
-                className="h-4 w-4 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <ClockIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">All caught up!</p>
+              {metricsLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {metrics?.pendingApprovals?.value ?? 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {metrics?.pendingApprovals?.value === 0 ? 'All caught up!' : 'Awaiting review'}
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Risk Flags</CardTitle>
-              <svg
-                className="h-4 w-4 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
+              <AlertTriangleIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">No issues detected</p>
+              {metricsLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {metrics?.riskFlags?.value ?? 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {metrics?.riskFlags?.value === 0 ? 'No issues detected' : 'Requires attention'}
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Processing Time</CardTitle>
-              <svg
-                className="h-4 w-4 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
+              <CardTitle className="text-sm font-medium">STP Rate</CardTitle>
+              <CheckCircleIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">Avg. processing time</p>
+              {metricsLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {metrics?.stpRate?.value ?? '--'}%
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Straight-through processing
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -118,9 +136,34 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center h-40 text-muted-foreground">
-              No recent activity
-            </div>
+            {activityLoading ? (
+              <div className="flex items-center justify-center h-40">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : recentActivity && recentActivity.length > 0 ? (
+              <div className="space-y-4">
+                {recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-center gap-4 rounded-lg border p-3">
+                    {getActivityIcon(activity.type)}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {activity.invoiceNumber}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.description}
+                      </p>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(activity.timestamp), 'MMM d, HH:mm')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-40 text-muted-foreground">
+                No recent activity
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -134,7 +177,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
-              <button className="flex flex-col items-center gap-2 rounded-lg border p-4 hover:bg-accent transition-colors">
+              <Link href="/invoices/upload" className="flex flex-col items-center gap-2 rounded-lg border p-4 hover:bg-accent transition-colors">
                 <svg
                   className="h-8 w-8 text-primary"
                   fill="none"
@@ -149,9 +192,9 @@ export default function DashboardPage() {
                   />
                 </svg>
                 <span className="font-medium">Upload Invoice</span>
-              </button>
+              </Link>
 
-              <button className="flex flex-col items-center gap-2 rounded-lg border p-4 hover:bg-accent transition-colors">
+              <Link href="/purchase-orders" className="flex flex-col items-center gap-2 rounded-lg border p-4 hover:bg-accent transition-colors">
                 <svg
                   className="h-8 w-8 text-primary"
                   fill="none"
@@ -162,13 +205,13 @@ export default function DashboardPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <span className="font-medium">Create PO</span>
-              </button>
+                <span className="font-medium">View POs</span>
+              </Link>
 
-              <button className="flex flex-col items-center gap-2 rounded-lg border p-4 hover:bg-accent transition-colors">
+              <Link href="/analytics" className="flex flex-col items-center gap-2 rounded-lg border p-4 hover:bg-accent transition-colors">
                 <svg
                   className="h-8 w-8 text-primary"
                   fill="none"
@@ -183,7 +226,7 @@ export default function DashboardPage() {
                   />
                 </svg>
                 <span className="font-medium">View Analytics</span>
-              </button>
+              </Link>
             </div>
           </CardContent>
         </Card>

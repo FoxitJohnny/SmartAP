@@ -27,15 +27,16 @@ import json
 import logging
 from sqlalchemy.orm import Session
 
-from backend.src.models.approval import (
+from ..models.approval import (
     ArchivedDocument,
     DocumentAccessLog,
     ApprovalWorkflow,
     ApprovalAction,
     ArchivalStatus
 )
-from backend.src.models.invoice import InvoiceDocument
-from backend.src.services.pdf_service import PDFService
+from ..models.invoice import Invoice
+from ..db.models import InvoiceDB
+from .pdf_service import PDFService
 
 logger = logging.getLogger(__name__)
 

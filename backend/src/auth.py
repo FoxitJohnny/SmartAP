@@ -2,9 +2,11 @@
 SmartAP Authentication Module
 
 JWT-based authentication with user registration, login, and token management.
+Users are persisted to the PostgreSQL database.
 """
 
 import os
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Annotated
@@ -14,6 +16,13 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from passlib.context import CryptContext
 from jose import JWTError, jwt
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from .db.database import get_session
+from .db.models import UserDB, RefreshTokenDB
+
+logger = logging.getLogger(__name__)
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -106,31 +115,92 @@ class UserResponse(BaseModel):
 
 
 # ============================================================================
-# In-memory user store (replace with database in production)
+# Database Helper Functions
 # ============================================================================
 
-# Simple in-memory store for development
-_users_db: dict[str, dict] = {}
-_refresh_tokens: dict[str, str] = {}  # token -> user_id
+async def get_user_by_email(session: AsyncSession, email: str) -> Optional[UserDB]:
+    """Get a user by email from the database."""
+    result = await session.execute(
+        select(UserDB).where(UserDB.email == email)
+    )
+    return result.scalar_one_or_none()
 
 
-def _init_demo_user():
-    """Initialize a demo user for testing."""
-    if "demo@smartap.com" not in _users_db:
-        user_id = "user_demo_001"
-        _users_db["demo@smartap.com"] = {
-            "id": user_id,
+async def get_user_by_id(session: AsyncSession, user_id: str) -> Optional[UserDB]:
+    """Get a user by user_id from the database."""
+    result = await session.execute(
+        select(UserDB).where(UserDB.user_id == user_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def create_user_in_db(session: AsyncSession, user_data: dict) -> UserDB:
+    """Create a new user in the database."""
+    user = UserDB(
+        user_id=user_data["user_id"],
+        email=user_data["email"],
+        full_name=user_data["full_name"],
+        hashed_password=user_data["hashed_password"],
+        role=user_data.get("role", "viewer"),
+        department=user_data.get("department"),
+        is_active=True,
+        is_verified=False,
+    )
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+async def store_refresh_token(session: AsyncSession, token: str, user_id: str, expires_at: datetime) -> RefreshTokenDB:
+    """Store a refresh token in the database."""
+    refresh_token = RefreshTokenDB(
+        token=token,
+        user_id=user_id,
+        expires_at=expires_at,
+    )
+    session.add(refresh_token)
+    await session.commit()
+    return refresh_token
+
+
+async def get_refresh_token(session: AsyncSession, token: str) -> Optional[RefreshTokenDB]:
+    """Get a refresh token from the database."""
+    result = await session.execute(
+        select(RefreshTokenDB).where(
+            RefreshTokenDB.token == token,
+            RefreshTokenDB.revoked == False,
+            RefreshTokenDB.expires_at > datetime.now(timezone.utc)
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def revoke_refresh_token(session: AsyncSession, token: str) -> None:
+    """Revoke a refresh token."""
+    result = await session.execute(
+        select(RefreshTokenDB).where(RefreshTokenDB.token == token)
+    )
+    db_token = result.scalar_one_or_none()
+    if db_token:
+        db_token.revoked = True
+        db_token.revoked_at = datetime.now(timezone.utc)
+        await session.commit()
+
+
+async def ensure_demo_user(session: AsyncSession) -> None:
+    """Ensure demo user exists in database."""
+    existing = await get_user_by_email(session, "demo@smartap.com")
+    if not existing:
+        await create_user_in_db(session, {
+            "user_id": "user_demo_001",
             "email": "demo@smartap.com",
             "full_name": "Demo User",
             "hashed_password": pwd_context.hash("Demo1234!"),
             "role": "finance_manager",
             "department": "Finance",
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-
-# Initialize demo user
-_init_demo_user()
+        })
+        logger.info("Demo user created in database")
 
 
 # ============================================================================
@@ -159,19 +229,21 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_refresh_token(user_id: str) -> str:
-    """Create a JWT refresh token."""
-    expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+def create_refresh_token_jwt(user_id: str) -> tuple[str, datetime]:
+    """Create a JWT refresh token. Returns (token, expires_at) with naive datetime for DB."""
+    # Use timezone-aware for JWT exp claim
+    expires_at_utc = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    # Use naive datetime for database storage
+    expires_at_naive = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode = {
         "sub": user_id,
-        "exp": expire,
+        "exp": expires_at_utc,
         "iat": datetime.now(timezone.utc),
         "type": "refresh",
         "jti": secrets.token_urlsafe(16)
     }
     token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    _refresh_tokens[token] = user_id
-    return token
+    return token, expires_at_naive
 
 
 def decode_token(token: str) -> Optional[dict]:
@@ -183,7 +255,10 @@ def decode_token(token: str) -> Optional[dict]:
         return None
 
 
-async def get_current_user(token: Annotated[Optional[str], Depends(oauth2_scheme)]) -> User:
+async def get_current_user(
+    token: Annotated[Optional[str], Depends(oauth2_scheme)],
+    session: AsyncSession = Depends(get_session)
+) -> User:
     """Get the current authenticated user from JWT token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -205,35 +280,36 @@ async def get_current_user(token: Annotated[Optional[str], Depends(oauth2_scheme
     if user_email is None:
         raise credentials_exception
     
-    user_data = _users_db.get(user_email)
-    if user_data is None:
+    user_db = await get_user_by_email(session, user_email)
+    if user_db is None:
         raise credentials_exception
     
-    if not user_data.get("is_active", True):
+    if not user_db.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is disabled"
         )
     
     return User(
-        id=user_data["id"],
-        email=user_data["email"],
-        full_name=user_data["full_name"],
-        role=user_data["role"],
-        department=user_data.get("department"),
-        is_active=user_data["is_active"],
-        created_at=datetime.fromisoformat(user_data["created_at"])
+        id=user_db.user_id,
+        email=user_db.email,
+        full_name=user_db.full_name,
+        role=user_db.role,
+        department=user_db.department,
+        is_active=user_db.is_active,
+        created_at=user_db.created_at
     )
 
 
 async def get_current_user_optional(
-    token: Annotated[Optional[str], Depends(oauth2_scheme)]
+    token: Annotated[Optional[str], Depends(oauth2_scheme)],
+    session: AsyncSession = Depends(get_session)
 ) -> Optional[User]:
     """Get the current user if authenticated, otherwise return None."""
     if not token:
         return None
     try:
-        return await get_current_user(token)
+        return await get_current_user(token, session)
     except HTTPException:
         return None
 
@@ -249,10 +325,14 @@ async def get_current_user_optional(
     summary="Register a new user",
     description="Create a new user account with email and password."
 )
-async def register(user_data: UserCreate) -> UserResponse:
+async def register(
+    user_data: UserCreate,
+    session: AsyncSession = Depends(get_session)
+) -> UserResponse:
     """Register a new user."""
     # Check if user already exists
-    if user_data.email in _users_db:
+    existing = await get_user_by_email(session, user_data.email)
+    if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
@@ -260,26 +340,22 @@ async def register(user_data: UserCreate) -> UserResponse:
     
     # Create user
     user_id = f"user_{secrets.token_hex(8)}"
-    user = {
-        "id": user_id,
+    user_db = await create_user_in_db(session, {
+        "user_id": user_id,
         "email": user_data.email,
         "full_name": user_data.full_name,
         "hashed_password": hash_password(user_data.password),
         "role": user_data.role,
         "department": user_data.department,
-        "is_active": True,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    _users_db[user_data.email] = user
+    })
     
     return UserResponse(
-        id=user["id"],
-        email=user["email"],
-        full_name=user["full_name"],
-        role=user["role"],
-        department=user["department"],
-        is_active=user["is_active"]
+        id=user_db.user_id,
+        email=user_db.email,
+        full_name=user_db.full_name,
+        role=user_db.role,
+        department=user_db.department,
+        is_active=user_db.is_active
     )
 
 
@@ -289,39 +365,52 @@ async def register(user_data: UserCreate) -> UserResponse:
     summary="Login and get access token",
     description="Authenticate with email and password to receive JWT tokens."
 )
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+async def login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    session: AsyncSession = Depends(get_session)
+) -> Token:
     """Authenticate user and return JWT tokens."""
-    user_data = _users_db.get(form_data.username)  # OAuth2 uses 'username' field
+    # Ensure demo user exists
+    await ensure_demo_user(session)
     
-    if not user_data:
+    user_db = await get_user_by_email(session, form_data.username)  # OAuth2 uses 'username' field
+    
+    if not user_db:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    if not verify_password(form_data.password, user_data["hashed_password"]):
+    if not verify_password(form_data.password, user_db.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    if not user_data.get("is_active", True):
+    if not user_db.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is disabled"
         )
     
+    # Update last login (use naive datetime for PostgreSQL compatibility)
+    user_db.last_login = datetime.utcnow()
+    await session.commit()
+    
     # Create tokens
     access_token = create_access_token(
         data={
-            "sub": user_data["email"],
-            "role": user_data["role"],
-            "user_id": user_data["id"]
+            "sub": user_db.email,
+            "role": user_db.role,
+            "user_id": user_db.user_id
         }
     )
-    refresh_token = create_refresh_token(user_data["id"])
+    refresh_token, expires_at = create_refresh_token_jwt(user_db.user_id)
+    
+    # Store refresh token in database
+    await store_refresh_token(session, refresh_token, user_db.user_id, expires_at)
     
     return Token(
         access_token=access_token,
@@ -337,37 +426,50 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> T
     summary="Login with JSON body",
     description="Authenticate with JSON payload instead of form data."
 )
-async def login_json(credentials: UserLogin) -> Token:
+async def login_json(
+    credentials: UserLogin,
+    session: AsyncSession = Depends(get_session)
+) -> Token:
     """Authenticate user with JSON body and return JWT tokens."""
-    user_data = _users_db.get(credentials.email)
+    # Ensure demo user exists
+    await ensure_demo_user(session)
     
-    if not user_data:
+    user_db = await get_user_by_email(session, credentials.email)
+    
+    if not user_db:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
         )
     
-    if not verify_password(credentials.password, user_data["hashed_password"]):
+    if not verify_password(credentials.password, user_db.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
         )
     
-    if not user_data.get("is_active", True):
+    if not user_db.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is disabled"
         )
     
+    # Update last login (use naive datetime for PostgreSQL compatibility)
+    user_db.last_login = datetime.utcnow()
+    await session.commit()
+    
     # Create tokens
     access_token = create_access_token(
         data={
-            "sub": user_data["email"],
-            "role": user_data["role"],
-            "user_id": user_data["id"]
+            "sub": user_db.email,
+            "role": user_db.role,
+            "user_id": user_db.user_id
         }
     )
-    refresh_token = create_refresh_token(user_data["id"])
+    refresh_token, expires_at = create_refresh_token_jwt(user_db.user_id)
+    
+    # Store refresh token in database
+    await store_refresh_token(session, refresh_token, user_db.user_id, expires_at)
     
     return Token(
         access_token=access_token,
@@ -383,7 +485,10 @@ async def login_json(credentials: UserLogin) -> Token:
     summary="Refresh access token",
     description="Get a new access token using a valid refresh token."
 )
-async def refresh_token(token_data: TokenRefresh) -> Token:
+async def refresh_token_endpoint(
+    token_data: TokenRefresh,
+    session: AsyncSession = Depends(get_session)
+) -> Token:
     """Refresh the access token using a refresh token."""
     payload = decode_token(token_data.refresh_token)
     
@@ -393,8 +498,9 @@ async def refresh_token(token_data: TokenRefresh) -> Token:
             detail="Invalid refresh token"
         )
     
-    # Verify token is in our store
-    if token_data.refresh_token not in _refresh_tokens:
+    # Verify token is in database and not revoked
+    stored_token = await get_refresh_token(session, token_data.refresh_token)
+    if not stored_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token has been revoked"
@@ -403,30 +509,29 @@ async def refresh_token(token_data: TokenRefresh) -> Token:
     user_id = payload.get("sub")
     
     # Find user by ID
-    user_data = None
-    for email, data in _users_db.items():
-        if data["id"] == user_id:
-            user_data = data
-            break
+    user_db = await get_user_by_id(session, user_id)
     
-    if not user_data:
+    if not user_db:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found"
         )
     
     # Revoke old refresh token
-    del _refresh_tokens[token_data.refresh_token]
+    await revoke_refresh_token(session, token_data.refresh_token)
     
     # Create new tokens
     access_token = create_access_token(
         data={
-            "sub": user_data["email"],
-            "role": user_data["role"],
-            "user_id": user_data["id"]
+            "sub": user_db.email,
+            "role": user_db.role,
+            "user_id": user_db.user_id
         }
     )
-    new_refresh_token = create_refresh_token(user_data["id"])
+    new_refresh_token, expires_at = create_refresh_token_jwt(user_db.user_id)
+    
+    # Store new refresh token
+    await store_refresh_token(session, new_refresh_token, user_db.user_id, expires_at)
     
     return Token(
         access_token=access_token,
@@ -444,11 +549,11 @@ async def refresh_token(token_data: TokenRefresh) -> Token:
 )
 async def logout(
     token_data: TokenRefresh,
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: AsyncSession = Depends(get_session)
 ) -> dict:
     """Logout and revoke refresh token."""
-    if token_data.refresh_token in _refresh_tokens:
-        del _refresh_tokens[token_data.refresh_token]
+    await revoke_refresh_token(session, token_data.refresh_token)
     
     return {"message": "Successfully logged out"}
 

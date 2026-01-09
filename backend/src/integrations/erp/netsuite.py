@@ -50,20 +50,11 @@ class NetSuiteConnector(ERPConnector):
     - Payment RESTlet: GET /vendorpayment
     """
     
-    def __init__(
-        self,
-        account_id: str,
-        consumer_key: str,
-        consumer_secret: str,
-        token_id: str,
-        token_secret: str,
-        restlet_url: str,
-        realm: Optional[str] = None
-    ):
+    def __init__(self, connection_config: Dict[str, Any]):
         """
         Initialize NetSuite connector.
         
-        Args:
+        Required config:
             account_id: NetSuite account ID (e.g., "1234567")
             consumer_key: OAuth consumer key from integration record
             consumer_secret: OAuth consumer secret
@@ -72,15 +63,15 @@ class NetSuiteConnector(ERPConnector):
             restlet_url: Base URL for RESTlets (e.g., "https://1234567.restlets.api.netsuite.com/app/site/hosting/restlet.nl")
             realm: NetSuite realm (default: account_id)
         """
-        super().__init__(ERPSystem.NETSUITE)
+        super().__init__(connection_config)
         
-        self.account_id = account_id
-        self.consumer_key = consumer_key
-        self.consumer_secret = consumer_secret
-        self.token_id = token_id
-        self.token_secret = token_secret
-        self.restlet_url = restlet_url
-        self.realm = realm or account_id
+        self.account_id = connection_config.get("account_id", "")
+        self.consumer_key = connection_config.get("consumer_key", "")
+        self.consumer_secret = connection_config.get("consumer_secret", "")
+        self.token_id = connection_config.get("token_id", "")
+        self.token_secret = connection_config.get("token_secret", "")
+        self.restlet_url = connection_config.get("restlet_url", "")
+        self.realm = connection_config.get("realm") or self.account_id
         
         self.client = httpx.AsyncClient(timeout=60.0)
         

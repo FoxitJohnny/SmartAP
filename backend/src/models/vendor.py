@@ -85,8 +85,8 @@ class VendorRiskProfile(BaseModel):
     price_stability_score: float = Field(default=1.0, ge=0.0, le=1.0, description="Price stability score")
     
     total_invoices_processed: int = Field(default=0, ge=0, description="Total invoices processed")
-    total_amount_paid: Decimal = Field(default=Decimal("0.0"), ge=0, description="Total amount paid to vendor")
-    average_invoice_amount: Decimal = Field(default=Decimal("0.0"), ge=0, description="Average invoice amount")
+    total_amount_paid: float = Field(default=0.0, ge=0, description="Total amount paid to vendor")
+    average_invoice_amount: float = Field(default=0.0, ge=0, description="Average invoice amount")
     average_days_to_pay: float = Field(default=0.0, ge=0, description="Average payment time in days")
     
     last_payment_date: Optional[date] = Field(default=None, description="Date of last payment")

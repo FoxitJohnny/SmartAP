@@ -15,7 +15,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
 
-from ..database import SessionLocal
+from ..db.database import SessionLocal, get_sync_session
 from ..models.erp import (
     ERPConnection,
     ERPSyncLog,
@@ -25,11 +25,12 @@ from ..models.erp import (
     SyncStatus,
     ERPEntityType,
 )
-from ..models.vendors import Vendor
+from ..db.models import VendorDB as Vendor
 from ..integrations.erp.base import ERPConnector, ERPVendor, ERPPurchaseOrder, SyncResult
 from ..integrations.erp.quickbooks import QuickBooksConnector
 from ..integrations.erp.xero import XeroConnector
 from ..integrations.erp.sap import SAPConnector
+from ..integrations.erp.netsuite import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
 
@@ -106,38 +107,31 @@ class ERPSyncService:
         
         logger.info("Scheduled 3 ERP sync jobs: vendors (60min), purchase orders (30min), payments (15min)")
     
+    
     def _get_connector(self, connection: ERPConnection) -> ERPConnector:
         """Factory function to create appropriate ERP connector"""
         
         credentials = connection.credentials or {}
         
+        # Build connection config dict that connectors expect
+        config = {
+            **credentials,
+            "tenant_id": connection.tenant_id,
+            "company_db": connection.company_db,
+            "api_url": connection.api_url,
+        }
+        
         if connection.system_type.value == "quickbooks":
-            return QuickBooksConnector(
-                client_id=credentials.get("client_id"),
-                client_secret=credentials.get("client_secret"),
-                realm_id=credentials.get("realm_id"),
-                access_token=credentials.get("access_token"),
-                refresh_token=credentials.get("refresh_token"),
-                token_expires_at=credentials.get("token_expires_at")
-            )
+            return QuickBooksConnector(config)
         
         elif connection.system_type.value == "xero":
-            return XeroConnector(
-                client_id=credentials.get("client_id"),
-                client_secret=credentials.get("client_secret"),
-                tenant_id=connection.tenant_id or credentials.get("tenant_id"),
-                access_token=credentials.get("access_token"),
-                refresh_token=credentials.get("refresh_token"),
-                token_expires_at=credentials.get("token_expires_at")
-            )
+            return XeroConnector(config)
         
         elif connection.system_type.value == "sap":
-            return SAPConnector(
-                service_layer_url=connection.api_url or credentials.get("service_layer_url"),
-                company_db=connection.company_db or credentials.get("company_db"),
-                username=credentials.get("username"),
-                password=credentials.get("password")
-            )
+            return SAPConnector(config)
+        
+        elif connection.system_type.value == "netsuite":
+            return NetSuiteConnector(config)
         
         else:
             raise ValueError(f"Unsupported ERP system: {connection.system_type}")

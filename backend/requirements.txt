@@ -18,9 +18,12 @@ pydantic>=2.9.0
 pydantic-settings>=2.5.0
 email-validator>=2.0.0
 
-# PDF Processing (placeholder for Foxit SDK integration)
-# foxit-pdf-sdk  # Uncomment when Foxit SDK is available
-pypdf>=5.0.0  # Fallback for basic PDF operations
+# PDF Processing
+pypdf>=5.0.0  # For digital PDF text extraction
+reportlab>=4.0.0  # For PDF generation (audit pages)
+# Optional: Local OCR for scanned documents (requires Tesseract installed on system)
+# pytesseract>=0.3.10  # Uncomment for local OCR support
+# pdf2image>=1.16.0  # Uncomment for local OCR support
 
 # Utilities
 python-dotenv>=1.0.1
@@ -50,7 +53,7 @@ langgraph>=0.2.0
 langchain-core>=0.3.0
 
 # ERP Integration (Phase 4.3)
-apscheduler>=3.10.0
+apscheduler>=3.10.0,<4.0.0  # Pin to 3.x, 4.x has breaking API changes
 
 # Logging (Phase 2.6)
 python-json-logger>=2.0.7
