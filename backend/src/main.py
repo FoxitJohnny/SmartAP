@@ -18,6 +18,8 @@ from .api import (
     router, 
     auth_router, 
     dashboard_router, 
+    settings_router,
+    processing_router,
     esign_router,
     erp_router,
     HAS_ESIGN,
@@ -37,19 +39,19 @@ async def lifespan(app: FastAPI):
             log_level=settings.log_level,
             json_mode=(settings.log_format == "json"),
         )
-        print(f"📝 Logging configured: level={settings.log_level}, format={settings.log_format}")
+        print(f"[LOG] Logging configured: level={settings.log_level}, format={settings.log_format}")
     except Exception as e:
-        print(f"⚠️ Failed to configure structured logging: {str(e)}")
+        print(f"[WARN] Failed to configure structured logging: {str(e)}")
     
     # Ensure directories exist
     Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
     Path(settings.processed_dir).mkdir(parents=True, exist_ok=True)
     Path(settings.signed_dir).mkdir(parents=True, exist_ok=True)  # eSign directory
     
-    print(f"🚀 SmartAP {settings.app_version} starting...")
-    print(f"📁 Upload directory: {settings.upload_dir}")
-    print(f"🤖 AI Provider: {settings.ai_provider}")
-    print(f"🔧 Model: {settings.model_id}")
+    print(f"[START] SmartAP {settings.app_version} starting...")
+    print(f"[DIR] Upload directory: {settings.upload_dir}")
+    print(f"[AI] AI Provider: {settings.ai_provider}")
+    print(f"[CONFIG] Model: {settings.model_id}")
     
     # Initialize database tables
     try:
@@ -69,21 +71,21 @@ async def lifespan(app: FastAPI):
                     if not result.scalar():
                         await run_seed(session)
                     else:
-                        print("📊 Database already seeded, skipping...")
+                        print("[INFO] Database already seeded, skipping...")
             except Exception as e:
-                print(f"⚠️ Seed data loading skipped: {str(e)}")
+                print(f"[WARN] Seed data loading skipped: {str(e)}")
                 
     except Exception as e:
-        print(f"⚠️ Failed to initialize database: {str(e)}")
+        print(f"[WARN] Failed to initialize database: {str(e)}")
     
     # Start ERP sync scheduler if enabled
     if settings.erp_sync_enabled:
         try:
             from .services.erp_sync_service import start_erp_sync_service
             start_erp_sync_service()
-            print(f"✅ ERP sync scheduler started")
+            print(f"[OK] ERP sync scheduler started")
         except Exception as e:
-            print(f"⚠️ Failed to start ERP sync scheduler: {str(e)}")
+            print(f"[WARN] Failed to start ERP sync scheduler: {str(e)}")
     
     yield
     
@@ -92,11 +94,11 @@ async def lifespan(app: FastAPI):
         try:
             from .services.erp_sync_service import stop_erp_sync_service
             stop_erp_sync_service()
-            print("🛑 ERP sync scheduler stopped")
+            print("[STOP] ERP sync scheduler stopped")
         except Exception as e:
-            print(f"⚠️ Failed to stop ERP sync scheduler: {str(e)}")
+            print(f"[WARN] Failed to stop ERP sync scheduler: {str(e)}")
     
-    print("👋 SmartAP shutting down...")
+    print("[BYE] SmartAP shutting down...")
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
@@ -152,7 +154,22 @@ def create_app() -> FastAPI:
         ],
     )
     
-    # Configure CORS for frontend integration
+    # Add rate limiting middleware (added BEFORE CORS so CORS wraps it)
+    try:
+        from .middleware import RateLimitMiddleware, RateLimitConfig
+        app.add_middleware(
+            RateLimitMiddleware,
+            config=RateLimitConfig(
+                requests_per_minute=120,
+                requests_per_hour=2000,
+                burst_limit=30,
+            )
+        )
+        print("[OK] Rate limiting enabled")
+    except Exception as e:
+        print(f"[WARN] Rate limiting disabled: {e}")
+    
+    # Configure CORS for frontend integration (added AFTER rate limiter so it's outermost)
     # In production, set CORS_ORIGINS to specific domains
     settings = get_settings()
     cors_origins = settings.cors_origins.split(",") if settings.cors_origins != "*" else ["*"]
@@ -166,42 +183,29 @@ def create_app() -> FastAPI:
         allow_headers=settings.cors_allow_headers.split(",") if settings.cors_allow_headers != "*" else ["*"],
     )
     
-    # Add rate limiting middleware
-    try:
-        from .middleware import RateLimitMiddleware, RateLimitConfig
-        app.add_middleware(
-            RateLimitMiddleware,
-            config=RateLimitConfig(
-                requests_per_minute=60,
-                requests_per_hour=1000,
-                burst_limit=10,
-            )
-        )
-        print("✅ Rate limiting enabled")
-    except Exception as e:
-        print(f"⚠️ Rate limiting disabled: {e}")
-    
     # Add request logging middleware
     try:
         from .middleware import RequestLoggingMiddleware
         app.add_middleware(RequestLoggingMiddleware, enable_metrics=True)
-        print("✅ Request logging middleware enabled")
+        print("[OK] Request logging middleware enabled")
     except Exception as e:
-        print(f"⚠️ Request logging middleware disabled: {e}")
+        print(f"[WARN] Request logging middleware disabled: {e}")
     
     # Include API routes
     app.include_router(router)
     app.include_router(auth_router)
     app.include_router(dashboard_router)
+    app.include_router(settings_router)
+    app.include_router(processing_router)
     
     # Include optional routers if available
     if HAS_ESIGN and esign_router:
         app.include_router(esign_router)
-        print("✅ eSign routes enabled")
+        print("[OK] eSign routes enabled")
     
     if HAS_ERP and erp_router:
         app.include_router(erp_router)
-        print("✅ ERP routes enabled")
+        print("[OK] ERP routes enabled")
     
     # Add global exception handlers
     _setup_exception_handlers(app)

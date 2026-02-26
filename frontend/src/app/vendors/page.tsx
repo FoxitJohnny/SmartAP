@@ -202,7 +202,7 @@ export default function VendorsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {data && data.data.length > 0 ? (
+            {data?.data && data.data.length > 0 ? (
               <div className="space-y-4">
                 <div className="rounded-md border">
                   <table className="w-full">

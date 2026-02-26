@@ -147,6 +147,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         "/api/v1/health/detailed",
     }
     
+    # Path patterns to exclude (will check if path contains these)
+    EXCLUDED_PATTERNS = [
+        "/pdf",  # Exclude PDF file serving endpoints
+        "/uploads",  # Exclude static file uploads
+    ]
+    
     def __init__(self, app, config: Optional[RateLimitConfig] = None):
         super().__init__(app)
         self.config = config or RateLimitConfig()
@@ -171,6 +177,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Skip rate limiting for excluded paths
         if request.url.path in self.EXCLUDED_PATHS:
             return await call_next(request)
+        
+        # Skip rate limiting for excluded patterns (e.g., /pdf endpoints)
+        for pattern in self.EXCLUDED_PATTERNS:
+            if pattern in request.url.path:
+                return await call_next(request)
         
         client_id = self._get_client_id(request)
         allowed, retry_after = await self.limiter.is_allowed(client_id)

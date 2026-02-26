@@ -157,6 +157,8 @@ MODEL_ID=gpt-4
 | `DATABASE_POOL_TIMEOUT` | int | `30` | Connection pool timeout (seconds) |
 | `DATABASE_ECHO` | bool | `false` | Echo SQL queries (debugging) |
 
+**Note (SQLite):** If you use a relative SQLite path like `sqlite+aiosqlite:///./smartap.db`, SmartAP resolves it relative to the backend folder to avoid accidentally creating/using different DB files based on the process working directory.
+
 **Database URL Examples:**
 
 ```bash

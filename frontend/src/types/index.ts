@@ -14,11 +14,12 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
-  created_at: string;
-  updated_at: string;
+  department?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export type UserRole = 'AP_CLERK' | 'MANAGER' | 'AUDITOR' | 'ADMIN';
+export type UserRole = 'admin' | 'finance_manager' | 'accountant' | 'viewer' | 'AP_CLERK' | 'MANAGER' | 'AUDITOR' | 'ADMIN';
 
 export interface LoginRequest {
   email: string;
@@ -28,7 +29,16 @@ export interface LoginRequest {
 export interface LoginResponse {
   access_token: string;
   refresh_token: string;
-  user: User;
+  token_type: string;
+  expires_in: number;
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    role: string;
+    department?: string;
+    is_active: boolean;
+  };
 }
 
 // ============================================================================
@@ -39,11 +49,13 @@ export type InvoiceStatus =
   | 'INGESTED' 
   | 'EXTRACTED' 
   | 'MATCHED' 
+  | 'PENDING_APPROVAL'
   | 'RISK_REVIEW' 
   | 'APPROVED' 
   | 'REJECTED'
   | 'READY_FOR_PAYMENT' 
-  | 'ARCHIVED';
+  | 'ARCHIVED'
+  | 'FAILED';
 
 export interface Invoice {
   id: string;
@@ -61,8 +73,10 @@ export interface Invoice {
   status: InvoiceStatus;
   confidence_score?: number;
   matched_po_id?: string;
+  risk_score?: number;
   risk_level?: RiskLevel;
   risk_flags?: RiskFlag[];
+  risk_assessment?: RiskAssessment;
   line_items?: InvoiceLineItem[];
   ocr_data?: any;
   file_path: string;
@@ -149,6 +163,130 @@ export interface POMatchResult {
 }
 
 // ============================================================================
+// Matching Types
+// ============================================================================
+
+export type MatchType =
+  | 'exact'
+  | 'fuzzy'
+  | 'partial'
+  | 'line_item'
+  | 'manual'
+  | 'no_match'
+  | 'none';
+
+export type DiscrepancySeverity = 'low' | 'medium' | 'high' | 'critical';
+
+export interface MatchingDiscrepancy {
+  discrepancy_type: string;
+  severity: DiscrepancySeverity;
+  description: string;
+  line_number?: number | null;
+  item_description?: string | null;
+  invoice_value?: string | null;
+  po_value?: string | null;
+  difference?: string | null;
+  difference_percentage?: number | null;
+  requires_approval?: boolean;
+  resolution_notes?: string | null;
+}
+
+export interface MatchingResult {
+  matching_id: string;
+  invoice_id: string;
+  po_id?: string | null;
+  po_number?: string | null;
+  match_type: MatchType;
+  match_score: number;
+  matched: boolean;
+
+  vendor_match_score: number;
+  amount_match_score: number;
+  date_match_score: number;
+  line_items_match_score: number;
+
+  discrepancies: MatchingDiscrepancy[];
+  has_discrepancies: boolean;
+  critical_discrepancies: number;
+
+  requires_approval: boolean;
+  approval_reason?: string | null;
+
+  matched_at?: string;
+  matched_by?: string | null;
+  ai_evaluation?: any;
+}
+
+export interface MatchingSettings {
+  id: number;
+  name: string;
+
+  vendor_fuzzy_threshold: number;
+  vendor_match_weight: number;
+
+  amount_tolerance_percent: number;
+  amount_match_tolerance: number;
+  amount_match_weight: number;
+
+  date_tolerance_days: number;
+  date_match_weight: number;
+
+  line_items_match_weight: number;
+  line_item_description_threshold: number;
+  line_item_amount_tolerance: number;
+
+  exact_match_threshold: number;
+  good_match_threshold: number;
+  acceptable_match_threshold: number;
+  review_threshold: number;
+
+  use_ai_for_ambiguous: boolean;
+  ai_confidence_threshold: number;
+
+  max_amount_discrepancy_for_auto_approve: number;
+  critical_discrepancy_blocks_approval: boolean;
+}
+
+// ============================================================================
+// Risk Settings Types
+// ============================================================================
+
+export interface RiskSettings {
+  id: number;
+  name: string;
+
+  // Component weights
+  weight_duplicate: number;
+  weight_vendor: number;
+  weight_price: number;
+  weight_amount: number;
+  weight_matching: number;
+  weight_pattern: number;
+
+  // Price anomaly detection
+  price_std_dev_threshold: number;
+  price_min_historical_invoices: number;
+  price_significant_amount: number;
+  price_minor_increase: number;
+  price_major_increase: number;
+  price_critical_increase: number;
+
+  // Duplicate detection
+  duplicate_exact_days: number;
+  duplicate_fuzzy_days: number;
+  duplicate_amount_tolerance: number;
+
+  // Vendor risk
+  vendor_low_risk_threshold: number;
+  vendor_medium_risk_threshold: number;
+  vendor_high_risk_threshold: number;
+  vendor_good_payment_reliability: number;
+  vendor_acceptable_payment_reliability: number;
+  vendor_inactive_days: number;
+  vendor_new_vendor_days: number;
+}
+
+// ============================================================================
 // Vendor Types
 // ============================================================================
 
@@ -172,28 +310,57 @@ export interface Vendor {
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
-export type RiskType = 
-  | 'DUPLICATE_INVOICE' 
-  | 'VENDOR_MISMATCH' 
-  | 'AMOUNT_ANOMALY' 
-  | 'PRICE_SPIKE'
-  | 'SUSPICIOUS_PATTERN';
+export type RiskType =
+  | 'duplicate_exact'
+  | 'duplicate_near'
+  | 'duplicate_fuzzy'
+  | 'vendor_spoofing'
+  | 'vendor_new'
+  | 'vendor_blocked'
+  | 'price_anomaly'
+  | 'amount_anomaly'
+  | 'matching_no_match'
+  | 'matching_low_score'
+  | 'matching_discrepancy'
+  | 'suspicious_pattern';
 
 export interface RiskFlag {
-  type: RiskType;
-  severity: RiskLevel;
+  flag_type: RiskType;
+  severity: string;          // lowercase: low | medium | high | critical
   description: string;
-  confidence: number;
+  confidence?: number;
+  evidence?: string;
+  expected_value?: string;
+  actual_value?: string;
+  deviation?: string;
+  suggested_action?: string;
+  related_invoice_id?: string;
   details?: any;
 }
 
 export interface RiskAssessment {
-  invoice_id: string;
+  invoice_id?: string;
+  assessment_id: string;
   risk_level: RiskLevel;
   risk_score: number;
-  flags: RiskFlag[];
+  duplicate_risk_score?: number;
+  vendor_risk_score?: number;
+  price_risk_score?: number;
+  amount_risk_score?: number;
+  matching_risk_score?: number;
+  pattern_risk_score?: number;
+  risk_flags: RiskFlag[];
+  critical_flags?: number;
+  high_flags?: number;
+  duplicate_info?: any;
+  vendor_risk_info?: any;
+  price_anomaly_info?: any;
   recommended_action: string;
-  created_at: string;
+  action_reason?: string;
+  requires_manual_review?: boolean;
+  assessed_at?: string;
+  assessed_by?: string;
+  assessment_version?: string;
 }
 
 // ============================================================================
@@ -249,6 +416,34 @@ export interface StatusDistribution {
   status: InvoiceStatus;
   count: number;
   percentage: number;
+}
+
+// ============================================================================
+// Processing Events (Workflow Logs)
+// ============================================================================
+
+export type ProcessingEventLevel = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR';
+export type ProcessingEventStatus = 'started' | 'succeeded' | 'failed';
+
+export interface ProcessingEvent {
+  id: number;
+  entity_type: string;
+  entity_id: string;
+  stage: string;
+  status: ProcessingEventStatus;
+  level: ProcessingEventLevel;
+  message: string;
+  details?: Record<string, unknown> | null;
+  correlation_id?: string | null;
+  created_at: string;
+}
+
+export interface ProcessingEventListResponse {
+  items: ProcessingEvent[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
 }
 
 // ============================================================================

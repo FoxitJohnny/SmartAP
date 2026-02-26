@@ -29,8 +29,16 @@ class VendorRiskAnalyzer:
     INACTIVE_DAYS = 180
     NEW_VENDOR_DAYS = 90
     
-    def __init__(self, vendor_repo: VendorRepository):
+    def __init__(self, vendor_repo: VendorRepository, settings: dict | None = None):
         self.vendor_repo = vendor_repo
+        if settings:
+            self.LOW_RISK_THRESHOLD = settings.get("vendor_low_risk_threshold", self.LOW_RISK_THRESHOLD)
+            self.MEDIUM_RISK_THRESHOLD = settings.get("vendor_medium_risk_threshold", self.MEDIUM_RISK_THRESHOLD)
+            self.HIGH_RISK_THRESHOLD = settings.get("vendor_high_risk_threshold", self.HIGH_RISK_THRESHOLD)
+            self.GOOD_PAYMENT_RELIABILITY = settings.get("vendor_good_payment_reliability", self.GOOD_PAYMENT_RELIABILITY)
+            self.ACCEPTABLE_PAYMENT_RELIABILITY = settings.get("vendor_acceptable_payment_reliability", self.ACCEPTABLE_PAYMENT_RELIABILITY)
+            self.INACTIVE_DAYS = settings.get("vendor_inactive_days", self.INACTIVE_DAYS)
+            self.NEW_VENDOR_DAYS = settings.get("vendor_new_vendor_days", self.NEW_VENDOR_DAYS)
     
     async def analyze_vendor_risk(
         self,
@@ -60,23 +68,45 @@ class VendorRiskAnalyzer:
             )
         
         # Get risk profile from vendor
-        risk_profile = vendor_db.risk_profile or {}
+        risk_profile = vendor_db.risk_profile
+        
+        # Handle VendorRiskProfile object or dict
+        if hasattr(risk_profile, 'risk_score'):
+            # Pydantic model
+            base_risk = risk_profile.risk_score
+            payment_reliability = risk_profile.payment_reliability_score
+            last_payment_date = risk_profile.last_payment_date
+            total_invoices = risk_profile.total_invoices_processed
+            active_fraud_flags = risk_profile.active_fraud_flags
+            average_invoice_amount = risk_profile.average_invoice_amount
+        elif isinstance(risk_profile, dict):
+            # Dict from JSON
+            base_risk = risk_profile.get('risk_score', 0.5)
+            payment_reliability = risk_profile.get('payment_reliability_score', 0.5)
+            last_payment_date = risk_profile.get('last_payment_date')
+            total_invoices = risk_profile.get('total_invoices_processed', 0)
+            active_fraud_flags = risk_profile.get('active_fraud_flags', 0)
+            average_invoice_amount = risk_profile.get('average_invoice_amount', 0.0)
+        else:
+            # Default values
+            base_risk = 0.5
+            payment_reliability = 0.5
+            last_payment_date = None
+            total_invoices = 0
+            active_fraud_flags = 0
+            average_invoice_amount = 0.0
         
         # Calculate risk components
         risk_score = 0.0
         
         # 1. Base risk from profile (40%)
-        base_risk = risk_profile.get('risk_score', 0.5)
         risk_score += base_risk * 0.40
         
         # 2. Payment reliability risk (30%)
-        payment_reliability = risk_profile.get('payment_reliability_score', 0.5)
         payment_risk = self._calculate_payment_risk(payment_reliability)
         risk_score += payment_risk * 0.30
         
         # 3. Activity risk (20%)
-        last_payment_date = risk_profile.get('last_payment_date')
-        total_invoices = risk_profile.get('total_invoices_processed', 0)
         onboarded_date = vendor_db.onboarded_date
         
         days_since_payment = self._days_since_payment(last_payment_date)
@@ -88,7 +118,6 @@ class VendorRiskAnalyzer:
         risk_score += activity_risk * 0.20
         
         # 4. Fraud flag risk (10%)
-        active_fraud_flags = risk_profile.get('active_fraud_flags', 0)
         fraud_risk = min(1.0, active_fraud_flags * 0.25) if active_fraud_flags > 0 else 0.0
         risk_score += fraud_risk * 0.10
         
@@ -108,7 +137,7 @@ class VendorRiskAnalyzer:
             is_new_vendor=is_new,
             is_blocked=is_blocked,
             active_fraud_flags=active_fraud_flags,
-            average_invoice_amount=Decimal(str(risk_profile.get('average_invoice_amount', 0.0))),
+            average_invoice_amount=Decimal(str(average_invoice_amount)),
             invoice_amount_std_dev=Decimal("0.0"),  # Would need historical calculation
             total_invoices=total_invoices,
         )

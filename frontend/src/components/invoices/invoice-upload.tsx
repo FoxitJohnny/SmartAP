@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUploadInvoice } from '@/lib/api/invoices';
@@ -59,6 +60,7 @@ export function InvoiceUpload({ onUploadComplete }: InvoiceUploadProps) {
           });
 
           // Update status to success
+          const uploadedId = result.invoice_id || result.document_id;
           setFiles((prev) =>
             prev.map((f, idx) =>
               idx === fileIndex
@@ -66,15 +68,15 @@ export function InvoiceUpload({ onUploadComplete }: InvoiceUploadProps) {
                     ...f,
                     status: 'success' as const,
                     progress: 100,
-                    invoiceId: result.invoice_id,
+                    invoiceId: uploadedId,
                   }
                 : f
             )
           );
 
           toast.success(`${file.name} uploaded successfully`);
-          if (onUploadComplete && result.invoice_id) {
-            onUploadComplete(result.invoice_id);
+          if (onUploadComplete && uploadedId) {
+            onUploadComplete(uploadedId);
           }
         } catch (error: any) {
           // Update status to error
@@ -212,7 +214,14 @@ export function InvoiceUpload({ onUploadComplete }: InvoiceUploadProps) {
                     </div>
                     <div className="text-sm text-muted-foreground ml-4">
                       {file.status === 'uploading' && `${file.progress}%`}
-                      {file.status === 'success' && 'Complete'}
+                      {file.status === 'success' && file.invoiceId ? (
+                        <Link
+                          href={`/invoices/${file.invoiceId}`}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          View Invoice →
+                        </Link>
+                      ) : file.status === 'success' ? 'Complete' : null}
                       {file.status === 'error' && 'Failed'}
                     </div>
                   </div>

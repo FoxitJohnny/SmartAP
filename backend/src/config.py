@@ -5,9 +5,20 @@ Manages environment variables and application settings.
 """
 
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, field_validator
 from typing import Optional
 from functools import lru_cache
+from pathlib import Path
+
+
+def _backend_root_dir() -> Path:
+    # This file lives at <backend_root>/src/config.py
+    return Path(__file__).resolve().parents[1]
+
+
+def _default_database_url() -> str:
+    db_path = _backend_root_dir() / "smartap.db"
+    return f"sqlite+aiosqlite:///{db_path.as_posix()}"
 
 
 class Settings(BaseSettings):
@@ -42,7 +53,12 @@ class Settings(BaseSettings):
     extraction_confidence_threshold: float = Field(default=0.85, description="Minimum confidence for auto-approval")
     max_file_size_mb: int = Field(default=50, description="Maximum upload file size in MB")
     
-    # Foxit API Configuration (placeholder)
+    # Foxit PDF Services API Configuration (for OCR)
+    foxit_api_base_url: Optional[str] = Field(default=None, description="Foxit PDF Services API base URL")
+    foxit_api_client_id: Optional[str] = Field(default=None, description="Foxit PDF Services API client ID")
+    foxit_api_client_secret: Optional[str] = Field(default=None, description="Foxit PDF Services API client secret")
+    
+    # Legacy Foxit API Configuration (kept for backward compatibility)
     foxit_api_key: Optional[str] = Field(default=None, description="Foxit API key for OCR services")
     foxit_api_endpoint: Optional[str] = Field(default=None, description="Foxit API endpoint")
     
@@ -84,9 +100,29 @@ class Settings(BaseSettings):
     
     # Database Configuration
     database_url: str = Field(
-        default="sqlite+aiosqlite:///./smartap.db",
+        default_factory=_default_database_url,
         description="Database connection URL"
     )
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalize_database_url(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+
+        # If a sqlite URL uses an explicit relative path (./...), resolve it relative
+        # to the backend root to avoid different DB files based on process CWD.
+        if value.startswith("sqlite") and ":///" in value and ":memory:" not in value:
+            scheme, rest = value.split(":///", 1)
+            path_part, *query = rest.split("?", 1)
+            if path_part.startswith("./"):
+                resolved = (_backend_root_dir() / path_part[2:]).resolve()
+                rebuilt = f"{scheme}:///{resolved.as_posix()}"
+                if query:
+                    rebuilt = f"{rebuilt}?{query[0]}"
+                return rebuilt
+
+        return value
     database_pool_size: int = Field(default=5, description="Database connection pool size")
     database_pool_max_overflow: int = Field(default=10, description="Max overflow connections")
     database_pool_timeout: int = Field(default=30, description="Connection pool timeout in seconds")
@@ -134,9 +170,10 @@ class Settings(BaseSettings):
     log_format: str = Field(default="json", description="Log format: json or text")
     
     class Config:
-        env_file = ".env"
+        env_file = str(_backend_root_dir() / ".env")
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # Allow extra env vars not defined in Settings
 
 
 @lru_cache()

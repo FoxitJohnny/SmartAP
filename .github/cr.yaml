@@ -1,0 +1,29 @@
+# Chart Releaser Configuration
+# https://github.com/helm/chart-releaser
+
+# The GitHub owner (user or organization) of the chart repository
+owner: ""  # Will use repo owner
+
+# The GitHub repository name of the chart repository
+git-repo: ""  # Will use current repo
+
+# Path to directory containing chart packages
+packages-with-index: true
+
+# Generate release notes from chart changelog
+release-notes-file: RELEASE-NOTES.md
+
+# Mark releases as draft
+draft: false
+
+# Mark releases as prerelease if version contains alpha/beta/rc
+mark-as-latest: true
+
+# Skip creating GitHub release for existing tags
+skip-existing: true
+
+# Sign packages with GPG (disabled by default)
+sign: false
+
+# Pages branch
+pages-branch: gh-pages

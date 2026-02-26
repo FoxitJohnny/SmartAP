@@ -15,9 +15,11 @@ class MatchType(str, Enum):
     """Type of match between invoice and PO."""
     EXACT = "exact"              # Exact PO number match
     FUZZY = "fuzzy"              # Fuzzy match on vendor + amount
+    PARTIAL = "partial"          # Partial match (some fields match)
     LINE_ITEM = "line_item"      # Matched by line items
     MANUAL = "manual"            # Manually matched
     NO_MATCH = "no_match"        # No match found
+    NONE = "none"                # Alias for no match
 
 
 class DiscrepancyType(str, Enum):
@@ -121,6 +123,12 @@ class MatchingResult(BaseModel):
     # Additional info
     candidate_pos: List[str] = Field(default_factory=list, description="Other PO candidates considered")
     matching_algorithm: str = Field(default="fuzzy_matching_v1", description="Algorithm used")
+
+    # AI evaluation (optional)
+    ai_evaluation: Optional[dict] = Field(
+        default=None,
+        description="AI decision payload used to approve/flag ambiguous matches",
+    )
     
     # Metadata
     matched_at: datetime = Field(default_factory=datetime.utcnow)

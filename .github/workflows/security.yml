@@ -1,0 +1,507 @@
+# Security Scan Workflow
+# Comprehensive security scanning for SmartAP
+# Runs on pushes to main, PRs, and weekly schedule
+
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly scan on Sunday at midnight UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    inputs:
+      full_scan:
+        description: 'Run full security scan including slow checks'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+
+jobs:
+  # =============================================================================
+  # Python Dependency Audit
+  # =============================================================================
+  python-audit:
+    name: Python Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run pip-audit on requirements.txt
+        id: pip_audit
+        run: |
+          cd backend
+          pip-audit -r requirements.txt --format json --output pip-audit-report.json || true
+          pip-audit -r requirements.txt --format markdown --output pip-audit-report.md || true
+          
+          # Check for critical/high vulnerabilities
+          if pip-audit -r requirements.txt --strict 2>/dev/null; then
+            echo "status=pass" >> $GITHUB_OUTPUT
+          else
+            echo "status=fail" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+
+      - name: Upload pip-audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: |
+            backend/pip-audit-report.json
+            backend/pip-audit-report.md
+          retention-days: 30
+
+      - name: Comment on PR with pip-audit results
+        if: github.event_name == 'pull_request' && steps.pip_audit.outputs.status == 'fail'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = '';
+            try {
+              report = fs.readFileSync('backend/pip-audit-report.md', 'utf8');
+            } catch (e) {
+              report = 'Unable to read pip-audit report';
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🔒 Python Dependency Security Report\n\n${report}`
+            });
+
+  # =============================================================================
+  # Node.js Dependency Audit  
+  # =============================================================================
+  npm-audit:
+    name: Node.js Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci --ignore-scripts
+
+      - name: Run npm audit
+        id: npm_audit
+        run: |
+          cd frontend
+          npm audit --json > npm-audit-report.json || true
+          
+          # Check for high/critical vulnerabilities
+          if npm audit --audit-level=high 2>/dev/null; then
+            echo "status=pass" >> $GITHUB_OUTPUT
+          else
+            echo "status=fail" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+
+      - name: Upload npm audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: frontend/npm-audit-report.json
+          retention-days: 30
+
+  # =============================================================================
+  # Python SAST with Bandit
+  # =============================================================================
+  bandit:
+    name: Python SAST (Bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Bandit
+        run: pip install bandit[toml]
+
+      - name: Run Bandit security scan
+        id: bandit
+        run: |
+          cd backend
+          # Run bandit with medium severity threshold
+          bandit -r src/ \
+            -f json \
+            -o bandit-report.json \
+            --severity-level medium \
+            --confidence-level medium \
+            -x "**/tests/**,**/*_test.py,**/test_*.py" || true
+          
+          # Also generate SARIF for GitHub Security tab
+          bandit -r src/ \
+            -f sarif \
+            -o bandit-report.sarif \
+            --severity-level low \
+            -x "**/tests/**,**/*_test.py,**/test_*.py" || true
+          
+          # Check for high severity issues
+          HIGH_COUNT=$(cat bandit-report.json | python -c "import sys, json; data=json.load(sys.stdin); print(len([r for r in data.get('results', []) if r.get('issue_severity') == 'HIGH']))" 2>/dev/null || echo "0")
+          if [ "$HIGH_COUNT" -gt "0" ]; then
+            echo "status=fail" >> $GITHUB_OUTPUT
+            echo "high_count=$HIGH_COUNT" >> $GITHUB_OUTPUT
+          else
+            echo "status=pass" >> $GITHUB_OUTPUT
+            echo "high_count=0" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: |
+            backend/bandit-report.json
+            backend/bandit-report.sarif
+          retention-days: 30
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: backend/bandit-report.sarif
+          category: bandit
+        continue-on-error: true
+
+  # =============================================================================
+  # Secrets Scanning with Gitleaks
+  # =============================================================================
+  gitleaks:
+    name: Secrets Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for scanning
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}  # Optional for premium features
+        continue-on-error: true
+
+  # =============================================================================
+  # Semgrep SAST (Multi-language)
+  # =============================================================================
+  semgrep:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.inputs.full_scan == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/python
+            p/typescript
+            p/react
+            p/jwt
+            p/sql-injection
+            p/xss
+          generateSarif: true
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true
+
+      - name: Upload Semgrep SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+        continue-on-error: true
+
+  # =============================================================================
+  # Trivy Container Scanning
+  # =============================================================================
+  trivy:
+    name: Container Scanning (Trivy)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.inputs.full_scan == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build backend image for scanning
+        run: |
+          docker build -t smartap-backend:scan ./backend
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'smartap-backend:scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+        continue-on-error: true
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+        continue-on-error: true
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+        continue-on-error: true
+
+  # =============================================================================
+  # Security Configuration Audit
+  # =============================================================================
+  config-audit:
+    name: Security Configuration Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Check security configurations
+        id: config_audit
+        run: |
+          cd backend
+          
+          # Create audit script
+          cat > audit_config.py << 'EOF'
+          import sys
+          import os
+          sys.path.insert(0, '.')
+          
+          issues = []
+          
+          # Check for debug mode
+          if os.getenv('DEBUG', 'false').lower() == 'true':
+              issues.append("WARNING: DEBUG mode is enabled")
+          
+          # Check environment file for sensitive defaults
+          env_example = '.env.example'
+          if os.path.exists(env_example):
+              with open(env_example) as f:
+                  content = f.read()
+                  if 'changeme' in content.lower() or 'secret' in content.lower():
+                      pass  # Expected in example file
+          
+          # Check for hardcoded secrets in code
+          import subprocess
+          result = subprocess.run(
+              ['grep', '-r', '-l', '--include=*.py', 
+               '-e', 'password.*=.*["\']', 
+               '-e', 'secret.*=.*["\']',
+               '-e', 'api_key.*=.*["\']',
+               'src/'],
+              capture_output=True, text=True
+          )
+          
+          if result.returncode == 0 and result.stdout.strip():
+              # Filter out config.py which uses environment variables
+              files = [f for f in result.stdout.strip().split('\n') 
+                       if f and 'config.py' not in f and 'test' not in f.lower()]
+              if files:
+                  issues.append(f"Potential hardcoded secrets in: {', '.join(files)}")
+          
+          # Report
+          if issues:
+              print("Security Configuration Issues Found:")
+              for issue in issues:
+                  print(f"  - {issue}")
+              sys.exit(1)
+          else:
+              print("✅ Security configuration audit passed")
+              sys.exit(0)
+          EOF
+          
+          python audit_config.py
+        continue-on-error: true
+
+      - name: Check CORS configuration
+        run: |
+          cd backend
+          echo "Checking CORS configuration..."
+          
+          # Ensure CORS is not set to allow all in production
+          if grep -r "allow_origins=\['\*'\]" src/ 2>/dev/null; then
+            echo "⚠️  Warning: CORS allows all origins - ensure this is not used in production"
+          else
+            echo "✅ CORS configuration looks secure"
+          fi
+          
+          # Check if CORS is configurable via environment
+          if grep -q "cors_origins" src/config.py; then
+            echo "✅ CORS is configurable via environment variables"
+          fi
+
+      - name: Check rate limiting configuration
+        run: |
+          cd backend
+          echo "Checking rate limiting..."
+          
+          if grep -r "RateLimitMiddleware\|rate_limit" src/ >/dev/null 2>&1; then
+            echo "✅ Rate limiting is implemented"
+          else
+            echo "⚠️  Warning: Rate limiting may not be configured"
+          fi
+
+  # =============================================================================
+  # SQL Injection Check
+  # =============================================================================
+  sql-injection-check:
+    name: SQL Injection Prevention Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for raw SQL usage
+        run: |
+          cd backend
+          echo "Checking for potential SQL injection vulnerabilities..."
+          
+          # Check for raw SQL string formatting (potential injection)
+          ISSUES=$(grep -rn --include="*.py" \
+            -e 'execute.*%' \
+            -e 'execute.*\.format' \
+            -e 'execute.*f"' \
+            -e "execute.*f'" \
+            src/ 2>/dev/null | grep -v '#.*noqa' | grep -v 'test' || true)
+          
+          if [ -n "$ISSUES" ]; then
+            echo "⚠️  Potential SQL injection vulnerabilities found:"
+            echo "$ISSUES"
+            echo ""
+            echo "Please use parameterized queries instead of string formatting."
+          else
+            echo "✅ No obvious SQL injection vulnerabilities detected"
+          fi
+          
+          # Verify SQLAlchemy ORM usage
+          if grep -r "text(" src/ | grep -v "test" | head -5; then
+            echo ""
+            echo "ℹ️  Found SQLAlchemy text() usage - ensure parameters are bound properly"
+          fi
+
+  # =============================================================================
+  # XSS Prevention Check
+  # =============================================================================
+  xss-check:
+    name: XSS Prevention Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check frontend for XSS vulnerabilities
+        run: |
+          cd frontend
+          echo "Checking for potential XSS vulnerabilities..."
+          
+          # Check for dangerouslySetInnerHTML
+          DANGEROUS=$(grep -rn "dangerouslySetInnerHTML" src/ 2>/dev/null || true)
+          if [ -n "$DANGEROUS" ]; then
+            echo "⚠️  Found dangerouslySetInnerHTML usage (potential XSS):"
+            echo "$DANGEROUS"
+            echo ""
+            echo "Ensure content is properly sanitized before using dangerouslySetInnerHTML"
+          else
+            echo "✅ No dangerouslySetInnerHTML usage found"
+          fi
+          
+          # Check for innerHTML assignments
+          INNERHTML=$(grep -rn "\.innerHTML\s*=" src/ 2>/dev/null || true)
+          if [ -n "$INNERHTML" ]; then
+            echo "⚠️  Found direct innerHTML assignments:"
+            echo "$INNERHTML"
+          else
+            echo "✅ No direct innerHTML assignments found"
+          fi
+
+  # =============================================================================
+  # Summary Report
+  # =============================================================================
+  security-summary:
+    name: Security Summary
+    needs: [python-audit, npm-audit, bandit, gitleaks, config-audit, sql-injection-check, xss-check]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: reports
+        continue-on-error: true
+
+      - name: Generate summary
+        run: |
+          echo "# 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Python Dependency Audit | ${{ needs.python-audit.result == 'success' && '✅ Passed' || '⚠️ Review Required' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Node.js Dependency Audit | ${{ needs.npm-audit.result == 'success' && '✅ Passed' || '⚠️ Review Required' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Python SAST (Bandit) | ${{ needs.bandit.result == 'success' && '✅ Passed' || '⚠️ Review Required' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secrets Scanning | ${{ needs.gitleaks.result == 'success' && '✅ Passed' || '⚠️ Review Required' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Config Audit | ${{ needs.config-audit.result == 'success' && '✅ Passed' || '⚠️ Review Required' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SQL Injection Check | ${{ needs.sql-injection-check.result == 'success' && '✅ Passed' || '⚠️ Review Required' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| XSS Prevention Check | ${{ needs.xss-check.result == 'success' && '✅ Passed' || '⚠️ Review Required' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📋 Detailed reports are available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Scan completed at $(date -u '+%Y-%m-%d %H:%M:%S UTC')_" >> $GITHUB_STEP_SUMMARY

@@ -7,21 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge, RiskBadge } from '@/components/invoices/status-badge';
 import { PDFViewer } from '@/components/invoices/pdf-viewer';
-import { PDFAnnotationToolbar } from '@/components/invoices/pdf-annotation-toolbar';
 import { InvoiceFieldOverlay } from '@/components/invoices/invoice-field-overlay';
-import { ApprovalWorkflowVisualizer } from '@/components/approvals/approval-workflow-visualizer';
-import { ApprovalHistoryTimeline } from '@/components/approvals/approval-history-timeline';
-import { ApprovalActionDialog } from '@/components/approvals/approval-action-dialog';
-import { useInvoice, useApproveInvoice, useRejectInvoice, useRetryOCR } from '@/lib/api/invoices';
-import {
-  useApprovalWorkflow,
-  useApprovalHistory,
-  usePerformApprovalAction,
-} from '@/lib/api/approvals';
+import { useInvoice, useInvoiceMatchingResult, useRetryOCR } from '@/lib/api/invoices';
+import { useInvoiceProcessingEvents } from '@/lib/api/processing';
+import { useApprovalWorkflow, useApprovalHistory } from '@/lib/api/approvals';
+import { MatchingResultCard } from '@/components/invoices/matching-result-card';
+import { ProcessingEventsTable } from '@/components/processing/processing-events-table';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { FileText, Eye, EyeOff, CheckCircle, XCircle, ArrowUpCircle, MessageSquare } from 'lucide-react';
-import type { Annotation } from '@/types/foxit';
+import { FileText, Eye, EyeOff, ChevronDown, ChevronUp, History, ShieldAlert, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import type { RiskLevel, RiskAssessment, RiskFlag } from '@/types';
 import {
   Table,
   TableBody,
@@ -31,45 +26,374 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+// ============================================================================
+// Risk Assessment Detail Card
+// ============================================================================
+
+const COMPONENT_WEIGHTS: Record<string, { label: string; weight: number; color: string }> = {
+  duplicate: { label: 'Duplicate Detection', weight: 25, color: 'bg-red-500' },
+  vendor: { label: 'Vendor Risk', weight: 20, color: 'bg-orange-500' },
+  matching: { label: 'PO Matching', weight: 20, color: 'bg-blue-500' },
+  price: { label: 'Price Anomaly', weight: 15, color: 'bg-yellow-500' },
+  amount: { label: 'Amount Anomaly', weight: 10, color: 'bg-purple-500' },
+  pattern: { label: 'Suspicious Patterns', weight: 10, color: 'bg-pink-500' },
+};
+
+function riskScoreColor(score: number): string {
+  if (score >= 0.75) return 'text-red-600 dark:text-red-400';
+  if (score >= 0.5) return 'text-orange-600 dark:text-orange-400';
+  if (score >= 0.25) return 'text-yellow-600 dark:text-yellow-400';
+  return 'text-green-600 dark:text-green-400';
+}
+
+function riskBarColor(score: number): string {
+  if (score >= 0.75) return 'bg-red-500';
+  if (score >= 0.5) return 'bg-orange-500';
+  if (score >= 0.25) return 'bg-yellow-500';
+  return 'bg-green-500';
+}
+
+function actionBadgeVariant(action: string): { bg: string; text: string; icon: React.ReactNode } {
+  const a = action?.toLowerCase() || '';
+  if (a.includes('reject') || a.includes('block'))
+    return { bg: 'bg-red-100 dark:bg-red-950/40', text: 'text-red-700 dark:text-red-300', icon: <AlertTriangle className="h-4 w-4" /> };
+  if (a.includes('review') || a.includes('manual') || a.includes('escalate'))
+    return { bg: 'bg-yellow-100 dark:bg-yellow-950/40', text: 'text-yellow-700 dark:text-yellow-300', icon: <ShieldAlert className="h-4 w-4" /> };
+  if (a.includes('approve') || a.includes('auto'))
+    return { bg: 'bg-green-100 dark:bg-green-950/40', text: 'text-green-700 dark:text-green-300', icon: <CheckCircle className="h-4 w-4" /> };
+  return { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-700 dark:text-gray-300', icon: <Info className="h-4 w-4" /> };
+}
+
+function RiskAssessmentCard({
+  riskAssessment,
+  riskFlags,
+  riskScore,
+  riskLevel,
+}: {
+  riskAssessment?: RiskAssessment;
+  riskFlags: RiskFlag[];
+  riskScore?: number;
+  riskLevel?: string;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const score = riskAssessment?.risk_score ?? riskScore ?? 0;
+  const level = (riskAssessment?.risk_level || riskLevel || 'LOW').toUpperCase() as RiskLevel;
+  const flags = riskAssessment?.risk_flags ?? riskFlags;
+  const pct = Math.min(Math.round(score * 100), 100);
+
+  const componentScores = riskAssessment
+    ? [
+        { key: 'duplicate', score: riskAssessment.duplicate_risk_score ?? 0 },
+        { key: 'vendor', score: riskAssessment.vendor_risk_score ?? 0 },
+        { key: 'matching', score: riskAssessment.matching_risk_score ?? 0 },
+        { key: 'price', score: riskAssessment.price_risk_score ?? 0 },
+        { key: 'amount', score: riskAssessment.amount_risk_score ?? 0 },
+        { key: 'pattern', score: riskAssessment.pattern_risk_score ?? 0 },
+      ]
+    : [];
+
+  const borderColor =
+    level === 'CRITICAL'
+      ? 'border-red-500 dark:border-red-700'
+      : level === 'HIGH'
+        ? 'border-red-300 dark:border-red-800'
+        : level === 'MEDIUM'
+          ? 'border-yellow-300 dark:border-yellow-800'
+          : 'border-green-300 dark:border-green-800';
+
+  return (
+    <Card className={borderColor}>
+      <CardHeader
+        className="cursor-pointer hover:bg-muted/50 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle className="text-base">Risk Assessment</CardTitle>
+              <CardDescription>
+                {flags.length} flag{flags.length !== 1 ? 's' : ''} detected
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Overall score pill */}
+            <div className="flex items-center gap-2">
+              <span className={`text-2xl font-bold ${riskScoreColor(score)}`}>
+                {pct}%
+              </span>
+              <RiskBadge level={level} />
+            </div>
+            {expanded ? (
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            )}
+          </div>
+        </div>
+      </CardHeader>
+
+      {expanded && (
+        <CardContent className="space-y-6">
+          {/* Overall risk bar */}
+          <div>
+            <div className="flex items-center justify-between text-sm mb-1">
+              <span className="text-muted-foreground">Overall Risk Score</span>
+              <span className={`font-semibold ${riskScoreColor(score)}`}>
+                {score.toFixed(2)} / 1.00
+              </span>
+            </div>
+            <div className="h-3 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${riskBarColor(score)}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Recommended Action */}
+          {riskAssessment?.recommended_action && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold">Recommended Action</h4>
+              {(() => {
+                const v = actionBadgeVariant(riskAssessment.recommended_action);
+                return (
+                  <div className={`flex items-start gap-2 p-3 rounded-lg ${v.bg}`}>
+                    <span className={`mt-0.5 ${v.text}`}>{v.icon}</span>
+                    <div>
+                      <span className={`font-semibold text-sm ${v.text}`}>
+                        {riskAssessment.recommended_action.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                      {riskAssessment.action_reason && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {riskAssessment.action_reason}
+                        </p>
+                      )}
+                      {riskAssessment.requires_manual_review && (
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 font-medium">
+                          ⚠ Manual review required
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Component Score Breakdown */}
+          {componentScores.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold">Component Score Breakdown</h4>
+              <div className="space-y-3">
+                {componentScores.map(({ key, score: cs }) => {
+                  const meta = COMPONENT_WEIGHTS[key];
+                  const csPct = Math.min(Math.round(cs * 100), 100);
+                  return (
+                    <div key={key}>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-muted-foreground">
+                          {meta.label}{' '}
+                          <span className="text-muted-foreground/60">
+                            ({meta.weight}% weight)
+                          </span>
+                        </span>
+                        <span className={`font-medium ${riskScoreColor(cs)}`}>
+                          {cs.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${riskBarColor(cs)}`}
+                          style={{ width: `${csPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Detailed Info Sections */}
+          {riskAssessment?.duplicate_info && (
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold">Duplicate Detection Details</h4>
+              <div className="text-xs bg-muted p-3 rounded-lg space-y-1">
+                {riskAssessment.duplicate_info.is_duplicate !== undefined && (
+                  <p>
+                    <span className="text-muted-foreground">Is Duplicate:</span>{' '}
+                    <span className={riskAssessment.duplicate_info.is_duplicate ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+                      {riskAssessment.duplicate_info.is_duplicate ? 'Yes' : 'No'}
+                    </span>
+                  </p>
+                )}
+                {riskAssessment.duplicate_info.duplicate_type && (
+                  <p>
+                    <span className="text-muted-foreground">Type:</span>{' '}
+                    {riskAssessment.duplicate_info.duplicate_type}
+                  </p>
+                )}
+                {riskAssessment.duplicate_info.similarity_score !== undefined && (
+                  <p>
+                    <span className="text-muted-foreground">Similarity:</span>{' '}
+                    {(riskAssessment.duplicate_info.similarity_score * 100).toFixed(1)}%
+                  </p>
+                )}
+                {riskAssessment.duplicate_info.original_invoice_id && (
+                  <p>
+                    <span className="text-muted-foreground">Original Invoice:</span>{' '}
+                    {riskAssessment.duplicate_info.original_invoice_id}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {riskAssessment?.vendor_risk_info && (
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold">Vendor Risk Details</h4>
+              <div className="text-xs bg-muted p-3 rounded-lg space-y-1">
+                {riskAssessment.vendor_risk_info.vendor_status && (
+                  <p>
+                    <span className="text-muted-foreground">Vendor Status:</span>{' '}
+                    {riskAssessment.vendor_risk_info.vendor_status}
+                  </p>
+                )}
+                {riskAssessment.vendor_risk_info.risk_profile_score !== undefined && (
+                  <p>
+                    <span className="text-muted-foreground">Profile Risk Score:</span>{' '}
+                    {riskAssessment.vendor_risk_info.risk_profile_score}
+                  </p>
+                )}
+                {riskAssessment.vendor_risk_info.vendor_found !== undefined && (
+                  <p>
+                    <span className="text-muted-foreground">Vendor Found:</span>{' '}
+                    {riskAssessment.vendor_risk_info.vendor_found ? 'Yes' : 'No'}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {riskAssessment?.price_anomaly_info && (
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold">Price Anomaly Details</h4>
+              <div className="text-xs bg-muted p-3 rounded-lg space-y-1">
+                {riskAssessment.price_anomaly_info.has_anomaly !== undefined && (
+                  <p>
+                    <span className="text-muted-foreground">Has Anomaly:</span>{' '}
+                    <span className={riskAssessment.price_anomaly_info.has_anomaly ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+                      {riskAssessment.price_anomaly_info.has_anomaly ? 'Yes' : 'No'}
+                    </span>
+                  </p>
+                )}
+                {riskAssessment.price_anomaly_info.anomaly_details &&
+                  Array.isArray(riskAssessment.price_anomaly_info.anomaly_details) &&
+                  riskAssessment.price_anomaly_info.anomaly_details.map((d: Record<string, unknown>, i: number) => (
+                    <p key={i}>
+                      <span className="text-muted-foreground">{String(d.description || `Anomaly ${i + 1}`)}:</span>{' '}
+                      deviation {typeof d.deviation_percent === 'number' ? d.deviation_percent.toFixed(1) : '?'}%
+                    </p>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Risk Flags */}
+          {flags.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold">
+                Risk Flags ({flags.length})
+              </h4>
+              <div className="space-y-2">
+                {flags.map((flag: RiskFlag, index: number) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/20"
+                  >
+                    <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <RiskBadge level={(flag.severity?.toUpperCase?.() || 'MEDIUM') as RiskLevel} />
+                        <span className="font-medium text-sm">{flag.flag_type?.replace(/_/g, ' ')}</span>
+                        {flag.confidence !== undefined && (
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            Confidence: {(flag.confidence * 100).toFixed(0)}%
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{flag.description}</p>
+                      {(flag.expected_value || flag.actual_value) && (
+                        <div className="flex gap-4 mt-1 text-xs">
+                          {flag.expected_value && (
+                            <span className="text-muted-foreground">
+                              Expected: <span className="text-foreground font-medium">{flag.expected_value}</span>
+                            </span>
+                          )}
+                          {flag.actual_value && (
+                            <span className="text-muted-foreground">
+                              Actual: <span className="text-foreground font-medium">{flag.actual_value}</span>
+                            </span>
+                          )}
+                          {flag.deviation && (
+                            <span className="text-red-600 dark:text-red-400 font-medium">
+                              Deviation: {flag.deviation}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {flag.evidence && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Evidence: {flag.evidence}
+                        </p>
+                      )}
+                      {flag.suggested_action && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          Suggested: {flag.suggested_action}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Assessment metadata */}
+          {riskAssessment?.assessed_at && (
+            <div className="text-xs text-muted-foreground pt-2 border-t flex items-center gap-4">
+              <span>
+                Assessed: {format(new Date(riskAssessment.assessed_at), 'MMM d, yyyy HH:mm')}
+              </span>
+              {riskAssessment.assessed_by && (
+                <span>By: {riskAssessment.assessed_by}</span>
+              )}
+              {riskAssessment.assessment_version && (
+                <span>Version: {riskAssessment.assessment_version}</span>
+              )}
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
 export default function InvoiceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const invoiceId = params?.id as string;
   const [showPDFViewer, setShowPDFViewer] = useState(true);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
-  const [approvalActionType, setApprovalActionType] = useState<
-    'APPROVE' | 'REJECT' | 'ESCALATE' | 'REQUEST_CHANGES'
-  >('APPROVE');
+  const [showProcessingLogs, setShowProcessingLogs] = useState(false);
 
   const { data: invoice, isLoading, error } = useInvoice(invoiceId);
+  const { data: matchingResult } = useInvoiceMatchingResult(invoiceId);
+  const { data: processingEvents, isLoading: processingLoading } = useInvoiceProcessingEvents(invoiceId, 1, 50);
   const { data: workflow } = useApprovalWorkflow(invoiceId);
   const { data: history } = useApprovalHistory(invoiceId);
-  const approveMutation = useApproveInvoice();
-  const rejectMutation = useRejectInvoice();
   const retryOCRMutation = useRetryOCR();
-  const performActionMutation = usePerformApprovalAction();
-
-  const handleApprove = async () => {
-    try {
-      await approveMutation.mutateAsync({ id: invoiceId });
-      toast.success('Invoice approved successfully');
-    } catch (error) {
-      toast.error('Failed to approve invoice');
-    }
-  };
-
-  const handleReject = async () => {
-    const reason = prompt('Please provide a reason for rejection:');
-    if (!reason) return;
-
-    try {
-      await rejectMutation.mutateAsync({ id: invoiceId, reason });
-      toast.success('Invoice rejected');
-    } catch (error) {
-      toast.error('Failed to reject invoice');
-    }
-  };
 
   const handleRetryOCR = async () => {
     try {
@@ -80,25 +404,6 @@ export default function InvoiceDetailPage() {
     }
   };
 
-  const handleAnnotationCreate = (annotation: Partial<Annotation>) => {
-    const newAnnotation: Annotation = {
-      id: `ann-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type: annotation.type || 'note',
-      pageIndex: annotation.pageIndex || 0,
-      content: annotation.content,
-      color: annotation.color,
-      author: annotation.author,
-      createdDate: annotation.createdDate,
-    };
-    setAnnotations([...annotations, newAnnotation]);
-    toast.success('Annotation added');
-  };
-
-  const handleAnnotationDelete = (annotationId: string) => {
-    setAnnotations(annotations.filter((a) => a.id !== annotationId));
-    toast.success('Annotation deleted');
-  };
-
   const handleFieldClick = (fieldName: string, currentValue: any) => {
     const newValue = prompt(`Edit ${fieldName}:`, currentValue);
     if (newValue && newValue !== currentValue) {
@@ -107,28 +412,11 @@ export default function InvoiceDetailPage() {
     }
   };
 
-  const handleApprovalAction = (actionType: 'APPROVE' | 'REJECT' | 'ESCALATE' | 'REQUEST_CHANGES') => {
-    setApprovalActionType(actionType);
-    setShowApprovalDialog(true);
-  };
-
-  const handleApprovalConfirm = async (data: { comment?: string; reason?: string; assignTo?: string }) => {
-    try {
-      await performActionMutation.mutateAsync({
-        invoiceId,
-        action: {
-          action: approvalActionType,
-          comment: data.comment,
-          reason: data.reason,
-          assignTo: data.assignTo,
-        },
-      });
-      toast.success(`Invoice ${approvalActionType.toLowerCase()} successfully`);
-      setShowApprovalDialog(false);
-    } catch (error) {
-      toast.error(`Failed to ${approvalActionType.toLowerCase()} invoice`);
-    }
-  };
+  const shouldShowApprovalReview =
+    invoice?.status === 'RISK_REVIEW' ||
+    invoice?.status === 'PENDING_APPROVAL' ||
+    invoice?.status === 'pending_approval' ||
+    invoice?.status === 'risk_review';
 
   const getPDFUrl = () => {
     // Construct PDF URL from file path
@@ -232,57 +520,14 @@ export default function InvoiceDetailPage() {
                 Retry OCR
               </Button>
             )}
-            {invoice.status === 'RISK_REVIEW' && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => handleApprovalAction('REQUEST_CHANGES')}
-                  disabled={performActionMutation.isPending}
-                  className="gap-2"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Request Changes
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleApprovalAction('ESCALATE')}
-                  disabled={performActionMutation.isPending}
-                  className="gap-2"
-                >
-                  <ArrowUpCircle className="h-4 w-4" />
-                  Escalate
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleApprovalAction('REJECT')}
-                  disabled={performActionMutation.isPending}
-                  className="gap-2"
-                >
-                  <XCircle className="h-4 w-4" />
-                  Reject
-                </Button>
-                <Button
-                  onClick={() => handleApprovalAction('APPROVE')}
-                  disabled={performActionMutation.isPending}
-                  className="gap-2"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  Approve
-                </Button>
-              </>
+            {shouldShowApprovalReview && (
+              <Button className="gap-2" onClick={() => router.push(`/approvals/${invoiceId}`)}>
+                <FileText className="h-4 w-4" />
+                Review for Approval
+              </Button>
             )}
           </div>
         </div>
-
-        {/* Approval Action Dialog */}
-        <ApprovalActionDialog
-          open={showApprovalDialog}
-          onOpenChange={setShowApprovalDialog}
-          actionType={approvalActionType}
-          invoiceNumber={invoice.invoice_number}
-          onConfirm={handleApprovalConfirm}
-          isLoading={performActionMutation.isPending}
-        />
 
         {/* Overview Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -350,14 +595,6 @@ export default function InvoiceDetailPage() {
             <div className="space-y-4">
               {/* Field Overlay */}
               <InvoiceFieldOverlay invoice={invoice} onFieldClick={handleFieldClick} />
-
-              {/* Annotation Toolbar */}
-              <PDFAnnotationToolbar
-                onAnnotationCreate={handleAnnotationCreate}
-                onAnnotationDelete={handleAnnotationDelete}
-                annotations={annotations}
-                currentPage={1}
-              />
             </div>
           </div>
         )}
@@ -429,52 +666,14 @@ export default function InvoiceDetailPage() {
           </Card>
         </div>
 
-        {/* Risk Flags */}
-        {invoice.risk_flags && invoice.risk_flags.length > 0 && (
-          <Card className="border-red-200 dark:border-red-900">
-            <CardHeader>
-              <CardTitle className="text-red-600 dark:text-red-400">
-                Risk Flags ({invoice.risk_flags.length})
-              </CardTitle>
-              <CardDescription>Issues detected that require attention</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {invoice.risk_flags.map((flag, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/20"
-                  >
-                    <svg
-                      className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <RiskBadge level={flag.severity} />
-                        <span className="font-medium text-sm">{flag.type}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{flag.description}</p>
-                      {flag.details && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Details: {JSON.stringify(flag.details)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Risk Assessment */}
+        {(invoice.risk_assessment || (invoice.risk_flags && invoice.risk_flags.length > 0)) && (
+          <RiskAssessmentCard
+            riskAssessment={invoice.risk_assessment}
+            riskFlags={invoice.risk_flags || []}
+            riskScore={invoice.risk_score}
+            riskLevel={invoice.risk_level}
+          />
         )}
 
         {/* Invoice Details */}
@@ -548,10 +747,10 @@ export default function InvoiceDetailPage() {
                       <TableCell>{item.description || 'N/A'}</TableCell>
                       <TableCell className="text-right">{item.quantity || 0}</TableCell>
                       <TableCell className="text-right">
-                        ${item.unit_price?.toFixed(2) || '0.00'}
+                        ${parseFloat(String(item.unit_price || 0)).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
-                        ${item.line_total?.toFixed(2) || '0.00'}
+                        ${parseFloat(String(item.line_total || item.amount || 0)).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -576,14 +775,55 @@ export default function InvoiceDetailPage() {
           </Card>
         )}
 
-        {/* Approval Workflow & History */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Approval Workflow */}
-          {workflow && <ApprovalWorkflowVisualizer workflow={workflow} />}
+        {/* PO Matching Result */}
+        {matchingResult && <MatchingResultCard result={matchingResult} />}
 
-          {/* Approval History */}
-          {history && <ApprovalHistoryTimeline history={history} />}
-        </div>
+        {/* Processing Logs - Collapsible */}
+        <Card>
+          <CardHeader 
+            className="cursor-pointer hover:bg-muted/50 transition-colors" 
+            onClick={() => setShowProcessingLogs(!showProcessingLogs)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <CardTitle className="text-base">Processing Logs</CardTitle>
+                  <CardDescription>
+                    Step-by-step logs for upload, extraction, matching, risk, and decision.
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/processing?entity_type=invoice&entity_id=${encodeURIComponent(invoiceId)}`);
+                  }}
+                >
+                  Open in Logs
+                </Button>
+                {showProcessingLogs ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          {showProcessingLogs && (
+            <CardContent>
+              <ProcessingEventsTable
+                events={processingEvents?.items}
+                isLoading={processingLoading}
+                emptyMessage="No processing logs yet for this invoice."
+              />
+            </CardContent>
+          )}
+        </Card>
+
       </div>
     </DashboardLayout>
   );

@@ -1,0 +1,73 @@
+# Gitleaks Configuration
+# https://github.com/gitleaks/gitleaks
+
+title = "SmartAP Gitleaks Configuration"
+
+[extend]
+# Extend the default gitleaks config
+useDefault = true
+
+# Paths to ignore
+[allowlist]
+description = "Allowlisted files and patterns"
+paths = [
+    '''(^|/)\.env\.example$''',
+    '''(^|/)\.env\.template$''',
+    '''(^|/)\.env\.sample$''',
+    '''(^|/)requirements.*\.txt$''',
+    '''(^|/)package(-lock)?\.json$''',
+    '''(^|/)yarn\.lock$''',
+    '''(^|/)poetry\.lock$''',
+    '''(^|/)Pipfile\.lock$''',
+    '''node_modules/''',
+    '''\.venv/''',
+    '''venv/''',
+    '''__pycache__/''',
+    '''\.git/''',
+    '''\.next/''',
+    '''dist/''',
+    '''build/''',
+    '''coverage/''',
+    '''htmlcov/''',
+    '''\.pytest_cache/''',
+    '''\.mypy_cache/''',
+    '''\.tox/''',
+    # Test fixtures
+    '''(^|/)tests?/fixtures/''',
+    '''(^|/)tests?/data/''',
+    # Documentation examples
+    '''(^|/)docs/.*\.md$''',
+]
+
+# Specific rules
+[[rules]]
+id = "smartap-jwt-secret"
+description = "SmartAP JWT Secret"
+regex = '''(?i)(jwt[_-]?secret|token[_-]?secret)\s*[=:]\s*['"]([^'"]{8,})['"]'''
+keywords = ["jwt", "token", "secret"]
+
+[[rules]]
+id = "smartap-database-url"
+description = "Database connection string with credentials"
+regex = '''(?i)(postgres|postgresql|mysql|mongodb):\/\/[^:]+:[^@]+@[^\/]+'''
+keywords = ["postgres", "mysql", "mongodb"]
+
+[[rules]]
+id = "smartap-api-key"
+description = "API Key assignment"
+regex = '''(?i)(api[_-]?key|apikey)\s*[=:]\s*['"]([a-zA-Z0-9_-]{20,})['"]'''
+keywords = ["api_key", "apikey"]
+
+# Allow test/example values
+[[rules]]
+id = "allow-test-secrets"
+description = "Allow test/example secrets"
+regex = '''(?i)(test|example|sample|dummy|fake|mock|placeholder)'''
+allowlist = true
+
+# Entropy-based detection settings
+[rules.entropy]
+# Detect high-entropy strings that might be secrets
+enabled = true
+# Only flag strings with entropy > 4.5
+threshold = 4.5

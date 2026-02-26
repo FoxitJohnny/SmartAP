@@ -6,7 +6,49 @@ import type {
   InvoiceUploadResponse,
   PaginatedResponse,
   ApiResponse,
+  MatchingResult,
 } from '@/types';
+
+// Helper function to transform API response to frontend Invoice type
+function transformInvoiceResponse(data: any): Invoice {
+  // Handle nested invoice object from extraction API
+  const invoiceData = data.invoice || {};
+  
+  // Transform line items to map 'amount' to 'line_total'
+  const transformedLineItems = (invoiceData.line_items || data.line_items || []).map((item: any) => ({
+    ...item,
+    line_total: parseFloat(String(item.line_total || item.amount || 0)),
+    unit_price: parseFloat(String(item.unit_price || 0)),
+    quantity: parseFloat(String(item.quantity || 0)),
+  }));
+  
+  return {
+    id: data.document_id || data.id,
+    document_id: data.document_id || data.id,
+    invoice_number: invoiceData.invoice_number || data.invoice_number || 'N/A',
+    vendor_id: invoiceData.vendor_id || data.vendor_id,
+    vendor_name: invoiceData.vendor_name || data.vendor_name || 'Unknown',
+    invoice_date: invoiceData.invoice_date || data.invoice_date,
+    due_date: invoiceData.due_date || data.due_date,
+    total_amount: parseFloat(invoiceData.total || data.total_amount || data.amount || '0'),
+    tax_amount: parseFloat(invoiceData.tax || data.tax_amount || '0'),
+    subtotal: parseFloat(invoiceData.subtotal || data.subtotal || '0'),
+    currency: invoiceData.currency || data.currency || 'USD',
+    po_number: invoiceData.po_number || data.po_number,
+    status: data.status?.toUpperCase?.() || data.status || 'PENDING',
+    confidence_score: data.confidence?.total || data.confidence_score,
+    risk_score: data.risk_assessment?.risk_score ?? data.risk_score,
+    risk_level: (data.risk_assessment?.risk_level || data.risk_level || '').toUpperCase() as any || undefined,
+    risk_flags: data.risk_assessment?.risk_flags ?? data.risk_flags,
+    risk_assessment: data.risk_assessment,
+    line_items: transformedLineItems,
+    ocr_data: data.ocr_data,
+    file_path: data.file_path || `/api/v1/invoices/${data.document_id}/pdf`,
+    file_hash: data.file_hash || '',
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  };
+}
 
 // API functions
 export const invoiceApi = {
@@ -32,16 +74,27 @@ export const invoiceApi = {
     }
     if (filters?.search) params.append('search', filters.search);
 
-    const response = await apiClient.get<PaginatedResponse<Invoice>>(
+    const response = await apiClient.get<PaginatedResponse<any>>(
       `/invoices?${params.toString()}`
     );
-    return response.data;
+    
+    // Transform items to normalize the response structure
+    const transformedItems = response.data.items?.map((item: any) => ({
+      ...item,
+      total_amount: item.total_amount ?? item.amount ?? 0,
+      status: item.status?.toUpperCase?.() || item.status,
+    })) || [];
+    
+    return {
+      ...response.data,
+      items: transformedItems,
+    };
   },
 
   // Get single invoice by ID
   getInvoice: async (id: string): Promise<Invoice> => {
-    const response = await apiClient.get<Invoice>(`/invoices/${id}`);
-    return response.data;
+    const response = await apiClient.get(`/invoices/${id}`);
+    return transformInvoiceResponse(response.data);
   },
 
   // Upload invoice file
@@ -57,7 +110,7 @@ export const invoiceApi = {
       formData,
       {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': undefined, // Let axios set multipart/form-data with boundary
         },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total && onProgress) {
@@ -102,6 +155,18 @@ export const invoiceApi = {
     const response = await apiClient.post<Invoice>(`/invoices/${id}/retry-ocr`);
     return response.data;
   },
+
+  // Get latest matching result (null if none)
+  getMatchingResult: async (id: string): Promise<MatchingResult | null> => {
+    try {
+      const response = await apiClient.get<MatchingResult>(`/invoices/${id}/matching-result`);
+      return response.data;
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 404) return null;
+      throw err;
+    }
+  },
 };
 
 // React Query hooks
@@ -114,6 +179,7 @@ export function useInvoices(
     queryKey: ['invoices', page, limit, filters],
     queryFn: () => invoiceApi.getInvoices(page, limit, filters),
     staleTime: 30 * 1000, // 30 seconds
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 
@@ -122,6 +188,15 @@ export function useInvoice(id: string) {
     queryKey: ['invoice', id],
     queryFn: () => invoiceApi.getInvoice(id),
     enabled: !!id,
+  });
+}
+
+export function useInvoiceMatchingResult(id: string) {
+  return useQuery({
+    queryKey: ['invoice', id, 'matchingResult'],
+    queryFn: () => invoiceApi.getMatchingResult(id),
+    enabled: !!id,
+    staleTime: 30 * 1000,
   });
 }
 

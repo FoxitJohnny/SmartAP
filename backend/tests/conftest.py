@@ -3,33 +3,72 @@ Test fixtures and utilities for SmartAP testing.
 
 Provides reusable fixtures for database setup, test data generation,
 and common test utilities.
+
+V3.1.1 Enhanced with:
+- Organized fixtures package (fixtures/)
+- httpx AsyncClient support for async API testing
+- FastAPI dependency override helpers
+- Comprehensive model factories
 """
 
 import pytest
 import asyncio
+import os
 from pathlib import Path
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator, Generator, Dict, Any
 from io import BytesIO
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import StaticPool, NullPool
 from fastapi.testclient import TestClient
+from httpx import AsyncClient, ASGITransport
 
-from src.db.database import Base
+from src.db.models import Base
+from src.db.database import get_session
 from src.db.models import (
-    Invoice as InvoiceORM,
-    PurchaseOrder as POORM,
-    Vendor as VendorORM,
-    POLineItem as POLineItemORM,
+    InvoiceDB as InvoiceORM,
+    PurchaseOrderDB as POORM,
+    VendorDB as VendorORM,
+    POLineItemDB as POLineItemORM,
 )
+from src.models.invoice import InvoiceStatus
+from src.models.vendor import VendorStatus
+from src.models.purchase_order import POStatus
 from src.main import app
 
+# Import organized fixtures
+from tests.fixtures import (
+    SAMPLE_INVOICES,
+    SAMPLE_USERS,
+    create_sample_invoice,
+    create_invoice_batch,
+    create_test_user,
+    create_admin_user,
+    create_auth_headers,
+    create_admin_headers,
+    INVOICE_PDF_CONTENT,
+    TEST_PASSWORD,
+    InvoiceFactory,
+    VendorFactory,
+    PurchaseOrderFactory,
+    UserFactory,
+    LineItemFactory,
+)
 
-# Test database URL (in-memory SQLite)
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+# Test database URLs
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    "sqlite+aiosqlite:///:memory:"
+)
+# Use PostgreSQL for integration tests when available
+POSTGRES_TEST_URL = os.getenv(
+    "POSTGRES_TEST_URL",
+    "postgresql+asyncpg://test:test@localhost:5432/smartap_test"
+)
 
 
 @pytest.fixture(scope="session")
@@ -43,12 +82,31 @@ def event_loop() -> Generator:
 @pytest.fixture(scope="function")
 async def test_db_engine():
     """Create async test database engine."""
-    engine = create_async_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-        echo=False,
-    )
+    from sqlalchemy import event
+    
+    # Determine if using SQLite or PostgreSQL
+    use_postgres = "postgresql" in TEST_DATABASE_URL
+    
+    if use_postgres:
+        engine = create_async_engine(
+            TEST_DATABASE_URL,
+            poolclass=NullPool,
+            echo=False,
+        )
+    else:
+        engine = create_async_engine(
+            TEST_DATABASE_URL,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+            echo=False,
+        )
+        
+        # Enable foreign key constraints for SQLite
+        @event.listens_for(engine.sync_engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
     
     # Create all tables
     async with engine.begin() as conn:
@@ -78,8 +136,67 @@ async def test_db_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
 
 @pytest.fixture(scope="function")
 def test_client() -> TestClient:
-    """Create FastAPI test client."""
+    """Create FastAPI test client (synchronous)."""
     return TestClient(app)
+
+
+@pytest.fixture(scope="function")
+async def test_client_with_db(test_db_session: AsyncSession, test_db_engine) -> AsyncGenerator[TestClient, None]:
+    """
+    Create FastAPI test client with properly configured database override.
+    
+    This fixture ensures the TestClient and test fixtures share the same database
+    by overriding the get_session dependency to use the test session.
+    """
+    # Override database dependency to use test session
+    async def override_get_session():
+        yield test_db_session
+    
+    app.dependency_overrides[get_session] = override_get_session
+    
+    # Create TestClient with overridden dependencies
+    with TestClient(app) as client:
+        yield client
+    
+    # Cleanup
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+async def async_client(test_db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """
+    Create async HTTP client for API testing.
+    
+    This fixture:
+    1. Overrides the database dependency to use test session
+    2. Provides httpx AsyncClient for async API calls
+    3. Cleans up after test completion
+    """
+    # Override database dependency
+    async def override_get_session():
+        yield test_db_session
+    
+    app.dependency_overrides[get_session] = override_get_session
+    
+    # Create async client with ASGI transport
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+    
+    # Cleanup
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def auth_headers() -> Dict[str, str]:
+    """Get authentication headers for standard user."""
+    return create_auth_headers(scenario="standard")
+
+
+@pytest.fixture
+def admin_auth_headers() -> Dict[str, str]:
+    """Get authentication headers for admin user."""
+    return create_admin_headers()
 
 
 # Test data fixtures
@@ -87,26 +204,36 @@ def test_client() -> TestClient:
 @pytest.fixture
 def sample_vendor_data():
     """Sample vendor data for testing."""
+    from datetime import date
     return {
         "vendor_id": "V001",
         "vendor_name": "Tech Supplies Inc",
-        "risk_level": "low",
-        "on_time_payment_rate": 0.95,
-        "total_invoices_processed": 50,
-        "is_active": True,
+        "status": VendorStatus.ACTIVE,
+        "onboarded_date": date(2025, 1, 1),
+        "payment_terms": "Net 30",
+        "currency": "USD",
+        "risk_profile": {
+            "risk_score": 0.1,
+            "on_time_payment_rate": 0.95,
+            "total_invoices_processed": 50,
+        },
     }
 
 
 @pytest.fixture
 def sample_po_data():
     """Sample purchase order data for testing."""
+    from datetime import date
     return {
         "po_number": "PO-001",
         "vendor_id": "V001",
-        "po_date": datetime(2026, 1, 1),
+        "created_date": date(2026, 1, 1),
+        "expected_delivery": date(2026, 2, 1),
+        "subtotal": Decimal("900.00"),
+        "tax": Decimal("100.00"),
         "total_amount": Decimal("1000.00"),
         "currency": "USD",
-        "status": "open",
+        "status": POStatus.OPEN,
         "payment_terms": "Net 30",
     }
 
@@ -118,16 +245,16 @@ def sample_po_line_items():
         {
             "line_number": 1,
             "description": "Laptop Computer",
-            "quantity": 2,
+            "quantity": 2.0,
             "unit_price": Decimal("400.00"),
-            "total": Decimal("800.00"),
+            "amount": Decimal("800.00"),
         },
         {
             "line_number": 2,
             "description": "Wireless Mouse",
-            "quantity": 5,
+            "quantity": 5.0,
             "unit_price": Decimal("40.00"),
-            "total": Decimal("200.00"),
+            "amount": Decimal("200.00"),
         },
     ]
 
@@ -137,17 +264,23 @@ def sample_invoice_data():
     """Sample invoice data for testing."""
     return {
         "document_id": "DOC-001",
-        "file_path": "/uploads/test_invoice.pdf",
-        "file_hash": "abc123def456",
-        "extraction_status": "completed",
         "invoice_number": "INV-12345",
-        "invoice_date": datetime(2026, 1, 5),
-        "due_date": datetime(2026, 2, 5),
-        "total_amount": Decimal("1000.00"),
-        "currency": "USD",
-        "vendor_name": "Tech Supplies Inc",
-        "po_number": "PO-001",
-        "confidence_score": 0.95,
+        "file_name": "test_invoice.pdf",
+        "file_hash": "abc123def456",
+        "status": InvoiceStatus.EXTRACTED,
+        "extraction_confidence": 0.95,
+        "requires_review": False,
+        "ocr_applied": False,
+        "page_count": 1,
+        "invoice_data": {
+            "invoice_number": "INV-12345",
+            "invoice_date": "2026-01-05",
+            "due_date": "2026-02-05",
+            "total_amount": 1000.00,
+            "currency": "USD",
+            "vendor_name": "Tech Supplies Inc",
+            "po_number": "PO-001",
+        },
     }
 
 
@@ -241,17 +374,23 @@ startxref
 def create_vendor_data(
     vendor_id: str = "V001",
     vendor_name: str = "Test Vendor",
-    risk_level: str = "low",
+    risk_score: float = 0.1,
     on_time_rate: float = 0.95,
 ) -> dict:
     """Generate vendor test data."""
+    from datetime import date
     return {
         "vendor_id": vendor_id,
         "vendor_name": vendor_name,
-        "risk_level": risk_level,
-        "on_time_payment_rate": on_time_rate,
-        "total_invoices_processed": 50,
-        "is_active": True,
+        "status": VendorStatus.ACTIVE,
+        "onboarded_date": date(2025, 1, 1),
+        "payment_terms": "Net 30",
+        "currency": "USD",
+        "risk_profile": {
+            "risk_score": risk_score,
+            "on_time_payment_rate": on_time_rate,
+            "total_invoices_processed": 50,
+        },
     }
 
 
@@ -259,13 +398,17 @@ def create_po_data(
     po_number: str = "PO-001",
     vendor_id: str = "V001",
     amount: Decimal = Decimal("1000.00"),
-    status: str = "open",
+    status: POStatus = POStatus.OPEN,
 ) -> dict:
     """Generate PO test data."""
+    from datetime import date
     return {
         "po_number": po_number,
         "vendor_id": vendor_id,
-        "po_date": datetime(2026, 1, 1),
+        "created_date": date(2026, 1, 1),
+        "expected_delivery": date(2026, 2, 1),
+        "subtotal": amount * Decimal("0.9"),
+        "tax": amount * Decimal("0.1"),
         "total_amount": amount,
         "currency": "USD",
         "status": status,
@@ -279,22 +422,28 @@ def create_invoice_data(
     amount: Decimal = Decimal("1000.00"),
     vendor_name: str = "Test Vendor",
     po_number: str = "PO-001",
-    extraction_status: str = "completed",
+    status: InvoiceStatus = InvoiceStatus.EXTRACTED,
 ) -> dict:
     """Generate invoice test data."""
     return {
         "document_id": document_id,
-        "file_path": f"/uploads/{document_id}.pdf",
-        "file_hash": f"hash_{document_id}",
-        "extraction_status": extraction_status,
         "invoice_number": invoice_number,
-        "invoice_date": datetime(2026, 1, 5),
-        "due_date": datetime(2026, 2, 5),
-        "total_amount": amount,
-        "currency": "USD",
-        "vendor_name": vendor_name,
-        "po_number": po_number,
-        "confidence_score": 0.95,
+        "file_name": f"{document_id}.pdf",
+        "file_hash": f"hash_{document_id}",
+        "status": status,
+        "extraction_confidence": 0.95,
+        "requires_review": False,
+        "ocr_applied": False,
+        "page_count": 1,
+        "invoice_data": {
+            "invoice_number": invoice_number,
+            "invoice_date": "2026-01-05",
+            "due_date": "2026-02-05",
+            "total": float(amount),
+            "currency": "USD",
+            "vendor_name": vendor_name,
+            "po_number": po_number,
+        },
     }
 
 
@@ -318,8 +467,14 @@ class TestDataBuilder:
         self.vendors.append(vendor)
         return vendor
     
-    async def create_po(self, vendor_id: str = None, **kwargs) -> POORM:
-        """Create PO with custom data."""
+    async def create_po(self, vendor_id: str = None, line_items: list = None, **kwargs) -> POORM:
+        """Create PO with custom data and line items.
+        
+        Args:
+            vendor_id: Vendor ID (uses first created vendor if None)
+            line_items: List of dicts with line item data (auto-creates default if None)
+            **kwargs: Additional PO data fields
+        """
         if vendor_id is None and self.vendors:
             vendor_id = self.vendors[0].vendor_id
         
@@ -327,6 +482,32 @@ class TestDataBuilder:
         po = POORM(**data)
         self.session.add(po)
         await self.session.flush()
+        
+        # Create line items (default to one item if not provided)
+        if line_items is None:
+            amount = kwargs.get("amount", Decimal("1000.00"))
+            line_items = [{
+                "line_number": 1,
+                "description": "Test Product",
+                "quantity": 1.0,
+                "unit_price": amount,
+                "amount": amount,
+                "sku": "TEST-001",
+                "unit": "EA",
+                "received_quantity": 0.0,
+            }]
+        
+        for item_data in line_items:
+            line_item = POLineItemORM(
+                po_id=po.id,
+                **item_data
+            )
+            self.session.add(line_item)
+        
+        await self.session.flush()
+        # Refresh to load line_items relationship
+        await self.session.refresh(po)
+        
         self.pos.append(po)
         return po
     

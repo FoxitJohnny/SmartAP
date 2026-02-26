@@ -15,7 +15,7 @@ export function ApprovalWorkflowVisualizer({
   workflow,
   className = '',
 }: ApprovalWorkflowVisualizerProps) {
-  const getStepIcon = (status: string) => {
+  const getStepIcon = (status?: string) => {
     switch (status) {
       case 'COMPLETED':
         return <CheckCircle className="h-6 w-6 text-green-500" />;
@@ -30,7 +30,7 @@ export function ApprovalWorkflowVisualizer({
     }
   };
 
-  const getStepColor = (status: string) => {
+  const getStepColor = (status?: string) => {
     switch (status) {
       case 'COMPLETED':
         return 'border-green-500 bg-green-50 dark:bg-green-950';
@@ -45,6 +45,16 @@ export function ApprovalWorkflowVisualizer({
     }
   };
 
+  // Guard against undefined or empty steps
+  if (!workflow?.steps || workflow.steps.length === 0) {
+    return (
+      <Card className={`p-6 ${className}`}>
+        <h3 className="text-lg font-semibold mb-4">Approval Workflow</h3>
+        <p className="text-muted-foreground">No workflow steps available</p>
+      </Card>
+    );
+  }
+
   return (
     <Card className={`p-6 ${className}`}>
       <h3 className="text-lg font-semibold mb-4">Approval Workflow</h3>
@@ -55,17 +65,17 @@ export function ApprovalWorkflowVisualizer({
           <div key={index}>
             <div
               className={`flex items-start gap-4 p-4 rounded-lg border-2 transition-all ${getStepColor(
-                step.status
+                step?.status
               )}`}
             >
               {/* Icon */}
-              <div className="flex-shrink-0 mt-1">{getStepIcon(step.status)}</div>
+              <div className="flex-shrink-0 mt-1">{getStepIcon(step?.status)}</div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <h4 className="font-semibold text-sm">
-                    {step.role.replace(/_/g, ' ')}
+                    {(step?.role || 'Unknown Role').replace(/_/g, ' ')}
                     {index === workflow.current_step && (
                       <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
                         Current Step
@@ -74,31 +84,31 @@ export function ApprovalWorkflowVisualizer({
                   </h4>
                   <span
                     className={`text-xs font-medium px-2 py-1 rounded ${
-                      step.status === 'COMPLETED'
+                      step?.status === 'COMPLETED'
                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : step.status === 'PENDING'
+                        : step?.status === 'PENDING'
                         ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                         : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                     }`}
                   >
-                    {step.status}
+                    {step?.status || 'Unknown'}
                   </span>
                 </div>
 
-                {step.user_name && (
+                {step?.user_name && (
                   <p className="text-sm text-muted-foreground">
-                    {step.status === 'COMPLETED' ? 'Completed by' : 'Assigned to'}:{' '}
+                    {step?.status === 'COMPLETED' ? 'Completed by' : 'Assigned to'}:{' '}
                     <span className="font-medium">{step.user_name}</span>
                   </p>
                 )}
 
-                {step.timestamp && (
+                {step?.timestamp && (
                   <p className="text-xs text-muted-foreground mt-1">
                     {format(new Date(step.timestamp), 'MMM d, yyyy h:mm a')}
                   </p>
                 )}
 
-                {step.comment && (
+                {step?.comment && (
                   <p className="text-sm mt-2 p-2 bg-background rounded border italic">
                     "{step.comment}"
                   </p>

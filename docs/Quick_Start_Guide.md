@@ -201,7 +201,9 @@ Once services are running:
 
 **Frontend (React UI)**
 - URL: http://localhost:3000
-- Default login: `admin@smartap.com` / `admin123`
+- Admin login: `admin@smartap.dev` / `Admin1234!`
+- Finance Manager: `finance@smartap.dev` / `Finance1234!`
+- Other demo users: see [Demo Script](Demo_Script.md#demo-user-accounts)
 
 ### API
 
@@ -597,10 +599,13 @@ docker-compose exec backend pytest
 
 ### Default Credentials
 
-| Service | Username | Password |
-|---------|----------|----------|
-| Web UI | admin@smartap.com | admin123 |
-| Database | smartap | (from .env) |
+| Service | Username | Password | Role |
+|---------|----------|----------|------|
+| Web UI (Admin) | admin@smartap.dev | Admin1234! | admin |
+| Web UI (Finance) | finance@smartap.dev | Finance1234! | finance_manager |
+| Web UI (Accountant) | accountant@smartap.dev | Account1234! | accountant |
+| Web UI (Viewer) | viewer@smartap.dev | Viewer1234! | viewer |
+| Database | smartap | (from .env) | — |
 
 ⚠️ **Change default passwords in production!**
 

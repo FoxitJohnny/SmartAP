@@ -27,6 +27,14 @@ from .matching import (
     DiscrepancySeverity,
     MatchType,
 )
+from .matching_settings import (
+    MatchingSettings,
+    MatchingSettingsUpdate,
+)
+from .risk_settings import (
+    RiskSettings,
+    RiskSettingsUpdate,
+)
 from .risk import (
     RiskAssessment,
     RiskFlag,
@@ -36,6 +44,12 @@ from .risk import (
     DuplicateInfo,
     VendorRiskInfo,
     PriceAnomalyInfo,
+)
+from .processing_event import (
+    ProcessingEvent,
+    ProcessingEventLevel,
+    ProcessingEventStatus,
+    ProcessingEventListResponse,
 )
 
 __all__ = [
@@ -63,6 +77,12 @@ __all__ = [
     "DiscrepancyType",
     "DiscrepancySeverity",
     "MatchType",
+    # Matching settings
+    "MatchingSettings",
+    "MatchingSettingsUpdate",
+    # Risk settings
+    "RiskSettings",
+    "RiskSettingsUpdate",
     # Risk models
     "RiskAssessment",
     "RiskFlag",
@@ -72,4 +92,9 @@ __all__ = [
     "DuplicateInfo",
     "VendorRiskInfo",
     "PriceAnomalyInfo",
+    # Processing events
+    "ProcessingEvent",
+    "ProcessingEventLevel",
+    "ProcessingEventStatus",
+    "ProcessingEventListResponse",
 ]

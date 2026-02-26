@@ -8,8 +8,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from decimal import Decimal
 
 from src.orchestration import InvoiceProcessingOrchestrator, WorkflowState, ProcessingDecision, WorkflowStatus
-from src.db.models import Invoice, PurchaseOrder, Vendor, POLineItem
-from src.models import MatchingResult, RiskAssessment, RiskLevel, RiskFlag
+from src.db.models import InvoiceDB, PurchaseOrderDB, VendorDB, POLineItemDB
+from src.models import MatchingResult, RiskAssessment, RiskLevel, RiskFlag, DuplicateInfo
+from src.models.matching import MatchType, DiscrepancyType, DiscrepancySeverity, Discrepancy
+from src.models.risk import RecommendedAction, RiskFlagType
 
 
 @pytest.fixture
@@ -23,20 +25,27 @@ def mock_db_session():
 @pytest.fixture
 def mock_invoice():
     """Create mock invoice."""
-    return Invoice(
+    from src.models.invoice import InvoiceStatus
+    return InvoiceDB(
         id=1,
         document_id="DOC-001",
-        file_path="/uploads/invoice.pdf",
-        file_hash="abc123",
-        extraction_status="completed",
         invoice_number="INV-12345",
-        invoice_date=datetime(2026, 1, 5),
-        due_date=datetime(2026, 2, 5),
-        total_amount=Decimal("1000.00"),
-        currency="USD",
-        vendor_name="Tech Supplies Inc",
-        po_number="PO-001",
-        confidence_score=0.95,
+        file_name="invoice.pdf",
+        file_hash="abc123",
+        status=InvoiceStatus.EXTRACTED,
+        extraction_confidence=0.95,
+        requires_review=False,
+        ocr_applied=False,
+        page_count=1,
+        invoice_data={
+            "invoice_number": "INV-12345",
+            "invoice_date": "2026-01-05",
+            "due_date": "2026-02-05",
+            "total": 1000.00,
+            "currency": "USD",
+            "vendor_name": "Tech Supplies Inc",
+            "po_number": "PO-001",
+        },
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
@@ -45,14 +54,19 @@ def mock_invoice():
 @pytest.fixture
 def mock_po():
     """Create mock purchase order."""
-    return PurchaseOrder(
+    from src.models.purchase_order import POStatus
+    from datetime import date
+    return PurchaseOrderDB(
         id=1,
         po_number="PO-001",
         vendor_id="V001",
-        po_date=datetime(2026, 1, 1),
+        created_date=date(2026, 1, 1),
+        expected_delivery=date(2026, 2, 1),
+        subtotal=Decimal("900.00"),
+        tax=Decimal("100.00"),
         total_amount=Decimal("1000.00"),
         currency="USD",
-        status="open",
+        status=POStatus.OPEN,
         payment_terms="Net 30",
         created_at=datetime.utcnow(),
     )
@@ -61,14 +75,21 @@ def mock_po():
 @pytest.fixture
 def mock_vendor():
     """Create mock vendor."""
-    return Vendor(
+    from src.models.vendor import VendorStatus
+    from datetime import date
+    return VendorDB(
         id=1,
         vendor_id="V001",
         vendor_name="Tech Supplies Inc",
-        risk_level="low",
-        on_time_payment_rate=0.95,
-        total_invoices_processed=50,
-        is_active=True,
+        status=VendorStatus.ACTIVE,
+        onboarded_date=date(2025, 1, 1),
+        payment_terms="Net 30",
+        currency="USD",
+        risk_profile={
+            "risk_score": 0.1,
+            "on_time_payment_rate": 0.95,
+            "total_invoices_processed": 50,
+        },
         created_at=datetime.utcnow(),
     )
 
@@ -85,10 +106,12 @@ class TestInvoiceProcessingOrchestrator:
         mock_vendor,
     ):
         """Test successful processing with auto-approval."""
-        # Setup mocks
-        with patch("src.orchestration.workflow_nodes.InvoiceRepository") as mock_invoice_repo_cls, \
-             patch("src.orchestration.workflow_nodes.PurchaseOrderRepository") as mock_po_repo_cls, \
-             patch("src.orchestration.workflow_nodes.VendorRepository") as mock_vendor_repo_cls, \
+        # Setup mocks - patch at orchestrator.py where repositories are instantiated
+        with patch("src.orchestration.orchestrator.InvoiceRepository") as mock_invoice_repo_cls, \
+             patch("src.orchestration.orchestrator.PurchaseOrderRepository") as mock_po_repo_cls, \
+             patch("src.orchestration.orchestrator.VendorRepository") as mock_vendor_repo_cls, \
+             patch("src.orchestration.orchestrator.MatchingRepository") as mock_matching_repo_cls, \
+             patch("src.orchestration.orchestrator.RiskRepository") as mock_risk_repo_cls, \
              patch("src.orchestration.workflow_nodes.POMatchingAgent") as mock_matching_agent_cls, \
              patch("src.orchestration.workflow_nodes.RiskDetectionAgent") as mock_risk_agent_cls:
             
@@ -105,13 +128,15 @@ class TestInvoiceProcessingOrchestrator:
             # Configure matching agent
             mock_matching_agent = AsyncMock()
             mock_matching_result = MatchingResult(
-                document_id="DOC-001",
+                matching_id="MATCH-001",
+                invoice_id="DOC-001",
+                po_id="PO-001",
                 po_number="PO-001",
+                match_type=MatchType.EXACT,
                 match_score=0.96,
-                match_type="exact",
+                matched=True,
                 discrepancies=[],
                 requires_approval=False,
-                ai_decision_used=False,
                 matched_at=datetime.utcnow(),
             )
             mock_matching_agent.match_invoice_to_po = AsyncMock(return_value=mock_matching_result)
@@ -120,14 +145,15 @@ class TestInvoiceProcessingOrchestrator:
             # Configure risk agent
             mock_risk_agent = AsyncMock()
             mock_risk_result = RiskAssessment(
-                document_id="DOC-001",
+                assessment_id="RISK-001",
+                invoice_id="DOC-001",
                 risk_level=RiskLevel.LOW,
-                overall_risk_score=0.15,
+                risk_score=0.15,
                 risk_flags=[],
                 duplicate_info=None,
-                vendor_info={"risk_score": 0.10, "payment_history": "excellent"},
-                price_anomaly_info=None,
-                recommended_action="approve",
+                vendor_risk_info=None,
+                price_anomalies=[],
+                recommended_action=RecommendedAction.AUTO_APPROVE,
                 action_reason="Low risk, high match score",
                 requires_manual_review=False,
                 assessed_at=datetime.utcnow(),
@@ -160,8 +186,11 @@ class TestInvoiceProcessingOrchestrator:
         mock_vendor,
     ):
         """Test processing with discrepancies requiring review."""
-        with patch("src.orchestration.workflow_nodes.InvoiceRepository") as mock_invoice_repo_cls, \
-             patch("src.orchestration.workflow_nodes.VendorRepository") as mock_vendor_repo_cls, \
+        with patch("src.orchestration.orchestrator.InvoiceRepository") as mock_invoice_repo_cls, \
+             patch("src.orchestration.orchestrator.VendorRepository") as mock_vendor_repo_cls, \
+             patch("src.orchestration.orchestrator.PurchaseOrderRepository") as mock_po_repo_cls, \
+             patch("src.orchestration.orchestrator.MatchingRepository") as mock_matching_repo_cls, \
+             patch("src.orchestration.orchestrator.RiskRepository") as mock_risk_repo_cls, \
              patch("src.orchestration.workflow_nodes.POMatchingAgent") as mock_matching_agent_cls, \
              patch("src.orchestration.workflow_nodes.RiskDetectionAgent") as mock_risk_agent_cls:
             
@@ -175,25 +204,26 @@ class TestInvoiceProcessingOrchestrator:
             mock_vendor_repo_cls.return_value = mock_vendor_repo
             
             # Matching with critical discrepancy
-            from src.models import Discrepancy, DiscrepancyType, DiscrepancySeverity
             mock_matching_agent = AsyncMock()
             mock_matching_result = MatchingResult(
-                document_id="DOC-001",
+                matching_id="MATCH-001",
+                invoice_id="DOC-001",
+                po_id="PO-001",
                 po_number="PO-001",
+                match_type=MatchType.FUZZY,
                 match_score=0.88,
-                match_type="fuzzy",
+                matched=True,
                 discrepancies=[
                     Discrepancy(
-                        discrepancy_type=DiscrepancyType.AMOUNT,
+                        discrepancy_type=DiscrepancyType.AMOUNT_TOLERANCE_EXCEEDED,
                         severity=DiscrepancySeverity.CRITICAL,
                         invoice_value="1200.00",
                         po_value="1000.00",
-                        difference=200.00,
+                        difference="200.00",
                         description="Amount exceeds PO by 20%",
                     )
                 ],
                 requires_approval=True,
-                ai_decision_used=False,
                 matched_at=datetime.utcnow(),
             )
             mock_matching_agent.match_invoice_to_po = AsyncMock(return_value=mock_matching_result)
@@ -202,14 +232,15 @@ class TestInvoiceProcessingOrchestrator:
             # Low risk assessment
             mock_risk_agent = AsyncMock()
             mock_risk_result = RiskAssessment(
-                document_id="DOC-001",
+                assessment_id="RISK-001",
+                invoice_id="DOC-001",
                 risk_level=RiskLevel.LOW,
-                overall_risk_score=0.20,
+                risk_score=0.20,
                 risk_flags=[],
                 duplicate_info=None,
-                vendor_info={"risk_score": 0.10},
-                price_anomaly_info=None,
-                recommended_action="review",
+                vendor_risk_info=None,
+                price_anomalies=[],
+                recommended_action=RecommendedAction.REVIEW,
                 action_reason="Amount discrepancy",
                 requires_manual_review=True,
                 assessed_at=datetime.utcnow(),
@@ -235,8 +266,11 @@ class TestInvoiceProcessingOrchestrator:
         mock_vendor,
     ):
         """Test processing with duplicate detection resulting in rejection."""
-        with patch("src.orchestration.workflow_nodes.InvoiceRepository") as mock_invoice_repo_cls, \
-             patch("src.orchestration.workflow_nodes.VendorRepository") as mock_vendor_repo_cls, \
+        with patch("src.orchestration.orchestrator.InvoiceRepository") as mock_invoice_repo_cls, \
+             patch("src.orchestration.orchestrator.VendorRepository") as mock_vendor_repo_cls, \
+             patch("src.orchestration.orchestrator.PurchaseOrderRepository") as mock_po_repo_cls, \
+             patch("src.orchestration.orchestrator.MatchingRepository") as mock_matching_repo_cls, \
+             patch("src.orchestration.orchestrator.RiskRepository") as mock_risk_repo_cls, \
              patch("src.orchestration.workflow_nodes.POMatchingAgent") as mock_matching_agent_cls, \
              patch("src.orchestration.workflow_nodes.RiskDetectionAgent") as mock_risk_agent_cls:
             
@@ -252,43 +286,44 @@ class TestInvoiceProcessingOrchestrator:
             # Good matching
             mock_matching_agent = AsyncMock()
             mock_matching_result = MatchingResult(
-                document_id="DOC-001",
+                matching_id="MATCH-001",
+                invoice_id="DOC-001",
+                po_id="PO-001",
                 po_number="PO-001",
+                match_type=MatchType.EXACT,
                 match_score=0.95,
-                match_type="exact",
+                matched=True,
                 discrepancies=[],
                 requires_approval=False,
-                ai_decision_used=False,
                 matched_at=datetime.utcnow(),
             )
             mock_matching_agent.match_invoice_to_po = AsyncMock(return_value=mock_matching_result)
             mock_matching_agent_cls.return_value = mock_matching_agent
             
             # Duplicate detected
-            from src.models import DuplicateInfo
             mock_risk_agent = AsyncMock()
             mock_risk_result = RiskAssessment(
-                document_id="DOC-001",
+                assessment_id="RISK-001",
+                invoice_id="DOC-001",
                 risk_level=RiskLevel.CRITICAL,
-                overall_risk_score=0.90,
+                risk_score=0.90,
                 risk_flags=[
                     RiskFlag(
-                        flag_type="DUPLICATE_INVOICE",
+                        flag_type=RiskFlagType.DUPLICATE_NEAR,
                         severity="critical",
                         description="Exact duplicate found (invoice number match)",
-                        confidence_score=1.0,
+                        confidence=1.0,
                     )
                 ],
                 duplicate_info=DuplicateInfo(
                     is_duplicate=True,
-                    match_type="invoice_number",
-                    confidence_score=1.0,
-                    existing_document_id="DOC-000",
-                    days_apart=5,
+                    duplicate_type=RiskFlagType.DUPLICATE_NEAR,
+                    similarity_score=1.0,
+                    duplicate_invoice_id="DOC-000",
                 ),
-                vendor_info=None,
-                price_anomaly_info=None,
-                recommended_action="reject",
+                vendor_risk_info=None,
+                price_anomalies=[],
+                recommended_action=RecommendedAction.REJECT,
                 action_reason="Duplicate invoice",
                 requires_manual_review=True,
                 assessed_at=datetime.utcnow(),
@@ -314,8 +349,11 @@ class TestInvoiceProcessingOrchestrator:
         mock_vendor,
     ):
         """Test processing with high risk requiring investigation."""
-        with patch("src.orchestration.workflow_nodes.InvoiceRepository") as mock_invoice_repo_cls, \
-             patch("src.orchestration.workflow_nodes.VendorRepository") as mock_vendor_repo_cls, \
+        with patch("src.orchestration.orchestrator.InvoiceRepository") as mock_invoice_repo_cls, \
+             patch("src.orchestration.orchestrator.VendorRepository") as mock_vendor_repo_cls, \
+             patch("src.orchestration.orchestrator.PurchaseOrderRepository") as mock_po_repo_cls, \
+             patch("src.orchestration.orchestrator.MatchingRepository") as mock_matching_repo_cls, \
+             patch("src.orchestration.orchestrator.RiskRepository") as mock_risk_repo_cls, \
              patch("src.orchestration.workflow_nodes.POMatchingAgent") as mock_matching_agent_cls, \
              patch("src.orchestration.workflow_nodes.RiskDetectionAgent") as mock_risk_agent_cls:
             
@@ -331,13 +369,15 @@ class TestInvoiceProcessingOrchestrator:
             # Good matching
             mock_matching_agent = AsyncMock()
             mock_matching_result = MatchingResult(
-                document_id="DOC-001",
+                matching_id="MATCH-001",
+                invoice_id="DOC-001",
+                po_id="PO-001",
                 po_number="PO-001",
+                match_type=MatchType.EXACT,
                 match_score=0.92,
-                match_type="exact",
+                matched=True,
                 discrepancies=[],
                 requires_approval=False,
-                ai_decision_used=False,
                 matched_at=datetime.utcnow(),
             )
             mock_matching_agent.match_invoice_to_po = AsyncMock(return_value=mock_matching_result)
@@ -346,27 +386,28 @@ class TestInvoiceProcessingOrchestrator:
             # High risk with multiple flags
             mock_risk_agent = AsyncMock()
             mock_risk_result = RiskAssessment(
-                document_id="DOC-001",
+                assessment_id="RISK-001",
+                invoice_id="DOC-001",
                 risk_level=RiskLevel.HIGH,
-                overall_risk_score=0.65,
+                risk_score=0.65,
                 risk_flags=[
                     RiskFlag(
-                        flag_type="VENDOR_RISK",
+                        flag_type=RiskFlagType.VENDOR_NEW,
                         severity="high",
                         description="Vendor has poor payment history",
-                        confidence_score=0.80,
+                        confidence=0.80,
                     ),
                     RiskFlag(
-                        flag_type="PRICE_ANOMALY",
+                        flag_type=RiskFlagType.PRICE_ANOMALY,
                         severity="high",
                         description="Price 35% above historical average",
-                        confidence_score=0.85,
+                        confidence=0.85,
                     ),
                 ],
                 duplicate_info=None,
-                vendor_info={"risk_score": 0.70, "payment_history": "poor"},
-                price_anomaly_info={"z_score": 2.5, "percentage_difference": 35},
-                recommended_action="investigate",
+                vendor_risk_info=None,
+                price_anomalies=[],
+                recommended_action=RecommendedAction.INVESTIGATE,
                 action_reason="Multiple high risk factors",
                 requires_manual_review=True,
                 assessed_at=datetime.utcnow(),
@@ -390,15 +431,25 @@ class TestInvoiceProcessingOrchestrator:
         mock_db_session,
     ):
         """Test processing when extraction is not completed."""
-        with patch("src.orchestration.workflow_nodes.InvoiceRepository") as mock_invoice_repo_cls:
+        with patch("src.orchestration.orchestrator.InvoiceRepository") as mock_invoice_repo_cls, \
+             patch("src.orchestration.orchestrator.VendorRepository") as mock_vendor_repo_cls, \
+             patch("src.orchestration.orchestrator.PurchaseOrderRepository") as mock_po_repo_cls, \
+             patch("src.orchestration.orchestrator.MatchingRepository") as mock_matching_repo_cls, \
+             patch("src.orchestration.orchestrator.RiskRepository") as mock_risk_repo_cls:
+            from src.models.invoice import InvoiceStatus
             
             # Invoice with incomplete extraction
-            incomplete_invoice = Invoice(
+            incomplete_invoice = InvoiceDB(
                 id=1,
                 document_id="DOC-002",
-                file_path="/uploads/invoice.pdf",
+                invoice_number="INV-PENDING",
+                file_name="invoice.pdf",
                 file_hash="xyz789",
-                extraction_status="pending",
+                status=InvoiceStatus.INGESTED,
+                extraction_confidence=0.0,
+                requires_review=False,
+                ocr_applied=False,
+                page_count=1,
                 created_at=datetime.utcnow(),
             )
             

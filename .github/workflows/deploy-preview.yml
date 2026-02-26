@@ -1,0 +1,163 @@
+name: Deploy Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # =============================================================================
+  # Build Preview
+  # =============================================================================
+  build-preview:
+    name: Build Preview
+    runs-on: ubuntu-latest
+    outputs:
+      preview-url: ${{ steps.deploy.outputs.url }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: cd frontend && npm ci
+
+      - name: Build frontend
+        run: cd frontend && npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.PREVIEW_API_URL || 'https://api.smartap-preview.example.com' }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/.next/
+          retention-days: 1
+
+      # Uncomment and configure for your deployment platform
+      # - name: Deploy to Vercel
+      #   id: deploy
+      #   uses: amondnet/vercel-action@v25
+      #   with:
+      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+      #     working-directory: ./frontend
+
+      # - name: Deploy to Netlify
+      #   id: deploy
+      #   uses: nwtgck/actions-netlify@v2
+      #   with:
+      #     publish-dir: './frontend/out'
+      #     production-deploy: false
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     deploy-message: "PR #${{ github.event.pull_request.number }}"
+      #   env:
+      #     NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      #     NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+  # =============================================================================
+  # Comment on PR
+  # =============================================================================
+  comment-preview:
+    name: Comment Preview URL
+    needs: build-preview
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v2
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '## 🚀 Preview Deployment'
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 🚀 Preview Deployment
+
+            | Status | Details |
+            |--------|---------|
+            | **Build** | ${{ needs.build-preview.result == 'success' && '✅ Success' || '❌ Failed' }} |
+            | **PR** | #${{ github.event.pull_request.number }} |
+            | **Commit** | ${{ github.event.pull_request.head.sha }} |
+            
+            ${{ needs.build-preview.outputs.preview-url && format('**Preview URL:** {0}', needs.build-preview.outputs.preview-url) || '> ℹ️ Configure deployment to enable preview URLs' }}
+
+            ---
+            
+            <details>
+            <summary>📋 Deployment Checklist</summary>
+
+            Before merging, ensure:
+            - [ ] All CI checks pass
+            - [ ] Code review completed
+            - [ ] Preview tested (if available)
+            - [ ] Documentation updated (if needed)
+            
+            </details>
+
+            <sub>Last updated: ${{ github.event.pull_request.updated_at }}</sub>
+          edit-mode: replace
+
+  # =============================================================================
+  # Lighthouse Audit
+  # =============================================================================
+  lighthouse:
+    name: Lighthouse Audit
+    needs: build-preview
+    runs-on: ubuntu-latest
+    if: needs.build-preview.outputs.preview-url != ''
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Lighthouse
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            ${{ needs.build-preview.outputs.preview-url }}
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: './.github/lighthouse/lighthouserc.json'
+        continue-on-error: true
+
+      - name: Format lighthouse score
+        id: format
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const results = ${{ steps.lighthouse.outputs.manifest || '[]' }};
+            if (results.length === 0) return '';
+            
+            const score = (v) => Math.round(v * 100);
+            const r = results[0].summary;
+            
+            return `| Metric | Score |
+            |--------|-------|
+            | Performance | ${score(r.performance)}% |
+            | Accessibility | ${score(r.accessibility)}% |
+            | Best Practices | ${score(r['best-practices'])}% |
+            | SEO | ${score(r.seo)}% |`;

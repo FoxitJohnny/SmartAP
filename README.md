@@ -168,7 +168,8 @@
 5. **Access SmartAP:**
    - **Frontend:** http://localhost (or http://localhost:3000)
    - **API Docs:** http://localhost/api/docs
-   - **Default Login:** admin@smartap.example.com / admin123 (⚠️ Change immediately!)
+   - **Default Login:** `admin@smartap.dev` / `Admin1234!` (⚠️ Change in production!)  
+     Other demo users: `finance@smartap.dev`, `accountant@smartap.dev`, `viewer@smartap.dev` (see [Demo Script](docs/Demo_Script.md))
 
 6. **Upload your first invoice:**
    - Navigate to the **Dashboard** → **Upload Invoice**

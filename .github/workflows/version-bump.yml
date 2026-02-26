@@ -1,0 +1,201 @@
+# Version Bump Workflow
+# Automates version bumping and release preparation
+
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Type of version bump'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+        default: patch
+      prerelease_id:
+        description: 'Pre-release identifier (e.g., alpha, beta, rc)'
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        description: 'Dry run (do not commit changes)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  bump-version:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+      old_version: ${{ steps.bump.outputs.old_version }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Get current version
+        id: current
+        run: |
+          # Get version from package.json
+          CURRENT_VERSION=$(jq -r '.version' frontend/package.json)
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+
+      - name: Calculate new version
+        id: bump
+        run: |
+          CURRENT="${{ steps.current.outputs.version }}"
+          BUMP_TYPE="${{ github.event.inputs.bump_type }}"
+          PRERELEASE_ID="${{ github.event.inputs.prerelease_id }}"
+          
+          # Parse current version
+          IFS='.-' read -ra PARTS <<< "$CURRENT"
+          MAJOR=${PARTS[0]}
+          MINOR=${PARTS[1]}
+          PATCH=${PARTS[2]}
+          
+          case $BUMP_TYPE in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+              ;;
+            prerelease)
+              if [[ -n "$PRERELEASE_ID" ]]; then
+                NEW_VERSION="$MAJOR.$MINOR.$PATCH-$PRERELEASE_ID"
+              else
+                NEW_VERSION="$MAJOR.$MINOR.$PATCH-alpha.1"
+              fi
+              ;;
+          esac
+          
+          echo "old_version=$CURRENT" >> $GITHUB_OUTPUT
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update version files
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          NEW_VERSION="${{ steps.bump.outputs.new_version }}"
+          
+          # Update frontend/package.json
+          jq ".version = \"$NEW_VERSION\"" frontend/package.json > tmp.json && mv tmp.json frontend/package.json
+          echo "Updated frontend/package.json"
+          
+          # Update helm/smartap/Chart.yaml
+          sed -i "s/^version:.*/version: $NEW_VERSION/" helm/smartap/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"$NEW_VERSION\"/" helm/smartap/Chart.yaml
+          echo "Updated helm/smartap/Chart.yaml"
+          
+          # Update backend config if exists
+          if [[ -f "backend/src/config.py" ]]; then
+            sed -i "s/app_version:.*=.*/app_version: str = \"$NEW_VERSION\"/" backend/src/config.py
+            echo "Updated backend/src/config.py"
+          fi
+
+      - name: Update CHANGELOG.md
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          NEW_VERSION="${{ steps.bump.outputs.new_version }}"
+          TODAY=$(date +%Y-%m-%d)
+          
+          # Add new version section after [Unreleased]
+          sed -i "s/## \[Unreleased\]/## [Unreleased]\n\n## [$NEW_VERSION] - $TODAY/" CHANGELOG.md
+          echo "Updated CHANGELOG.md"
+
+      - name: Configure Git
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create version bump commit
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          NEW_VERSION="${{ steps.bump.outputs.new_version }}"
+          
+          git add -A
+          git commit -m "chore(release): bump version to $NEW_VERSION"
+          echo "Created commit"
+
+      - name: Create Pull Request
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: release/v${{ steps.bump.outputs.new_version }}
+          title: "chore(release): bump version to v${{ steps.bump.outputs.new_version }}"
+          body: |
+            ## Version Bump
+            
+            This PR bumps the version from `${{ steps.bump.outputs.old_version }}` to `${{ steps.bump.outputs.new_version }}`.
+            
+            ### Changes
+            - Updated `frontend/package.json`
+            - Updated `helm/smartap/Chart.yaml`
+            - Updated `backend/src/config.py`
+            - Updated `CHANGELOG.md`
+            
+            ### After Merge
+            
+            After merging this PR, create a tag to trigger the release:
+            
+            ```bash
+            git tag v${{ steps.bump.outputs.new_version }}
+            git push origin v${{ steps.bump.outputs.new_version }}
+            ```
+            
+            ---
+            
+            _This PR was automatically created by the Version Bump workflow._
+          labels: |
+            release
+            automated
+          draft: false
+
+      - name: Summary
+        run: |
+          echo "## Version Bump Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Bump Type | ${{ github.event.inputs.bump_type }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Old Version | ${{ steps.bump.outputs.old_version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| New Version | ${{ steps.bump.outputs.new_version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dry Run | ${{ github.event.inputs.dry_run }} |" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Dry run mode** - No changes were committed." >> $GITHUB_STEP_SUMMARY
+          fi

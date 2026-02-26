@@ -85,7 +85,22 @@ async function getApprovalQueue(
   }
 
   const response = await apiClient.get(`/approvals/queue?${params.toString()}`);
-  return response.data;
+
+  // Backend returns { items, total, page, limit, pages }, while the UI expects { data, total, page, limit }.
+  const payload = response.data as
+    | { data: Invoice[]; total: number; page: number; limit: number }
+    | { items: Invoice[]; total: number; page: number; limit: number; pages?: number };
+
+  if ('items' in payload) {
+    return {
+      data: payload.items,
+      total: payload.total,
+      page: payload.page,
+      limit: payload.limit,
+    };
+  }
+
+  return payload;
 }
 
 /**
@@ -144,6 +159,7 @@ export function useApprovalQueue(
     queryKey: ['approval-queue', page, limit, filters],
     queryFn: () => getApprovalQueue(page, limit, filters),
     staleTime: 30000, // 30 seconds
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 

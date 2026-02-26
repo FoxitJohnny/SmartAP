@@ -2,12 +2,12 @@ import { InvoiceStatus, RiskLevel } from '@/types';
 import { cn } from '@/lib/utils';
 
 interface StatusBadgeProps {
-  status: InvoiceStatus;
+  status: InvoiceStatus | string;
   className?: string;
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const statusConfig: Record<InvoiceStatus, { label: string; className: string }> = {
+  const statusConfig: Record<string, { label: string; className: string }> = {
     INGESTED: {
       label: 'Ingested',
       className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
@@ -40,9 +40,24 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       label: 'Archived',
       className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     },
+    failed: {
+      label: 'Failed',
+      className: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+    },
+    pending: {
+      label: 'Pending',
+      className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+    },
+    processing: {
+      label: 'Processing',
+      className: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || {
+    label: status?.toString() || 'Unknown',
+    className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  };
 
   return (
     <span
@@ -82,7 +97,8 @@ export function RiskBadge({ level, className }: RiskBadgeProps) {
     },
   };
 
-  const config = riskConfig[level];
+  const normalizedLevel = (level?.toUpperCase() ?? 'LOW') as RiskLevel;
+  const config = riskConfig[normalizedLevel] ?? riskConfig.LOW;
 
   return (
     <span

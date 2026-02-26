@@ -1,0 +1,16 @@
+# E2E Test Results
+test-results/
+playwright-report/
+
+# Node modules
+node_modules/
+
+# Environment
+.env
+.env.local
+
+# Coverage
+coverage/
+
+# Playwright state
+playwright/.cache/

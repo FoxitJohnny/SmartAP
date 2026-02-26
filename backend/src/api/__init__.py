@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 # Core routers (always available)
 from .routes_simple import router as routes_simple
 from .dashboard_routes import router as dashboard_router
+from .settings_routes import router as settings_router
+from .processing_routes import router as processing_router
 from ..auth import router as auth_router
 
 # Track which routers are available
@@ -64,6 +66,8 @@ __all__ = [
     "router",
     "routes_simple",
     "dashboard_router",
+    "settings_router",
+    "processing_router",
     "auth_router",
     "full_router",
     "esign_router",

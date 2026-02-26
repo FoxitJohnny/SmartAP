@@ -1,0 +1,231 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Browser to test'
+        required: false
+        default: 'chromium'
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - all
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: smartap_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Install E2E dependencies
+        run: cd e2e && npm ci
+
+      - name: Install Playwright browsers
+        run: cd e2e && npx playwright install --with-deps chromium firefox
+
+      - name: Build frontend
+        run: cd frontend && npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+      - name: Start backend server
+        run: |
+          cd backend
+          uvicorn src.main:app --host 0.0.0.0 --port 8000 &
+          echo "Waiting for backend to start..."
+          sleep 10
+        env:
+          DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/smartap_test
+          REDIS_URL: redis://localhost:6379
+          SECRET_KEY: "test-secret-key-for-e2e"
+          TESTING: "true"
+
+      - name: Start frontend server
+        run: |
+          cd frontend
+          npm run start &
+          echo "Waiting for frontend to start..."
+          sleep 10
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+      - name: Wait for services
+        run: |
+          echo "Checking backend..."
+          curl --retry 10 --retry-delay 2 --retry-connrefused http://localhost:8000/health || true
+          echo "Checking frontend..."
+          curl --retry 10 --retry-delay 2 --retry-connrefused http://localhost:3000 || true
+
+      - name: Run E2E tests
+        run: |
+          cd e2e
+          npx playwright test --project=chromium
+        env:
+          BASE_URL: http://localhost:3000
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: e2e/test-results/
+          retention-days: 30
+
+      - name: Upload test screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-screenshots
+          path: e2e/test-results/artifacts/
+          retention-days: 7
+
+  e2e-firefox:
+    name: E2E Tests (Firefox)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: e2e
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: smartap_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend && pip install -r requirements.txt
+          cd ../frontend && npm ci
+          cd ../e2e && npm ci
+
+      - name: Install Playwright Firefox
+        run: cd e2e && npx playwright install --with-deps firefox
+
+      - name: Build and start services
+        run: |
+          cd frontend && npm run build
+          cd ../backend && uvicorn src.main:app --host 0.0.0.0 --port 8000 &
+          cd ../frontend && npm run start &
+          sleep 15
+        env:
+          DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/smartap_test
+          REDIS_URL: redis://localhost:6379
+          SECRET_KEY: "test-secret-key-for-e2e"
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+      - name: Run Firefox E2E tests
+        run: cd e2e && npx playwright test --project=firefox
+        env:
+          BASE_URL: http://localhost:3000
+          CI: true
+
+      - name: Upload Firefox report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-firefox
+          path: e2e/test-results/
+          retention-days: 30

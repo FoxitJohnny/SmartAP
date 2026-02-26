@@ -139,10 +139,46 @@ async def init_db() -> None:
     Should be called on application startup.
     """
     from .models import Base
+    from sqlalchemy import inspect, text
+
+    def _ensure_additive_schema(sync_conn) -> None:
+        """Apply additive schema updates for existing databases.
+
+        This project uses `create_all()` on startup; that won't add new columns.
+        We keep this strictly additive (ADD COLUMN / CREATE TABLE) to be safe.
+        """
+        inspector = inspect(sync_conn)
+        tables = set(inspector.get_table_names())
+
+        # Add ai_evaluation JSON column for persisted AI decisions
+        if "matching_results" in tables:
+            existing_cols = {c["name"] for c in inspector.get_columns("matching_results")}
+            if "ai_evaluation" not in existing_cols:
+                sync_conn.execute(text("ALTER TABLE matching_results ADD COLUMN ai_evaluation JSON"))
+
+        # Add new columns to matching_settings if the table already exists
+        if "matching_settings" in tables:
+            existing_cols = {c["name"] for c in inspector.get_columns("matching_settings")}
+            if "good_match_threshold" not in existing_cols:
+                sync_conn.execute(text("ALTER TABLE matching_settings ADD COLUMN good_match_threshold FLOAT"))
+            if "amount_match_tolerance" not in existing_cols:
+                sync_conn.execute(text("ALTER TABLE matching_settings ADD COLUMN amount_match_tolerance FLOAT"))
+
+        # Add new risk assessment columns (v2.0 enhancement)
+        if "risk_assessments" in tables:
+            existing_cols = {c["name"] for c in inspector.get_columns("risk_assessments")}
+            if "matching_risk_score" not in existing_cols:
+                sync_conn.execute(text("ALTER TABLE risk_assessments ADD COLUMN matching_risk_score FLOAT"))
+            if "vendor_risk_info" not in existing_cols:
+                sync_conn.execute(text("ALTER TABLE risk_assessments ADD COLUMN vendor_risk_info JSON"))
+            if "price_anomaly_info" not in existing_cols:
+                sync_conn.execute(text("ALTER TABLE risk_assessments ADD COLUMN price_anomaly_info JSON"))
     
     async with engine.begin() as conn:
         # Create all tables
         await conn.run_sync(Base.metadata.create_all)
+        # Apply additive migrations for existing DBs
+        await conn.run_sync(_ensure_additive_schema)
         print("✅ Database tables created successfully")
 
 

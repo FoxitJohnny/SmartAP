@@ -447,6 +447,8 @@ backend/
 | `MAX_FILE_SIZE_MB` | Maximum upload file size | `50` |
 | `DATABASE_URL` | Database connection string | `sqlite+aiosqlite:///./smartap.db` |
 
+**Note (SQLite):** If you use a relative SQLite path like `sqlite+aiosqlite:///./smartap.db`, SmartAP resolves it relative to the backend folder to avoid accidentally creating/using different DB files based on the process working directory.
+
 ## Foxit OCR Integration (Placeholder)
 
 The OCR service is prepared for Foxit Maestro OCR SDK integration. Currently uses pypdf as a fallback for digital PDFs.

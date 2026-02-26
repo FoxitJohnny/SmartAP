@@ -1,0 +1,69 @@
+# Codecov Configuration
+# https://docs.codecov.com/docs/codecovyml-reference
+
+coverage:
+  precision: 2
+  round: down
+  range: "30...80"
+  
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%
+        if_ci_failed: error
+      backend:
+        paths:
+          - "backend/src/**"
+        target: 40%
+        threshold: 5%
+      frontend:
+        paths:
+          - "frontend/src/**"
+        target: 30%
+        threshold: 5%
+    
+    patch:
+      default:
+        target: 50%
+        threshold: 10%
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: true
+  require_base: false
+  require_head: true
+
+flags:
+  backend:
+    paths:
+      - backend/
+    carryforward: true
+  frontend:
+    paths:
+      - frontend/
+    carryforward: true
+  e2e:
+    paths:
+      - e2e/
+    carryforward: true
+
+ignore:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/test_*.py"
+  - "**/tests/**"
+  - "**/migrations/**"
+  - "**/__pycache__/**"
+  - "**/node_modules/**"

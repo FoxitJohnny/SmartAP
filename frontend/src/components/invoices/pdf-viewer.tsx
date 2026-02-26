@@ -6,12 +6,11 @@ import { Card } from '@/components/ui/card';
 import {
   ZoomIn,
   ZoomOut,
-  RotateCw,
   Download,
-  ChevronLeft,
-  ChevronRight,
   Maximize2,
   Minimize2,
+  FileText,
+  ExternalLink,
 } from 'lucide-react';
 
 interface PDFViewerProps {
@@ -30,65 +29,51 @@ export function PDFViewer({
   className = '',
 }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const viewerRef = useRef<any>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [scale, setScale] = useState(1.0);
-  const [rotation, setRotation] = useState(0);
+  const [scale, setScale] = useState(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
-    let viewer: any = null;
+  // Construct the actual PDF URL from the backend
+  const getPdfUrl = () => {
+    // If it's already an absolute URL, use it
+    if (documentUrl.startsWith('http://') || documentUrl.startsWith('https://')) {
+      return documentUrl;
+    }
+    // Otherwise, construct from backend API
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+    const backendBaseUrl = apiBaseUrl.replace('/api/v1', '');
+    return `${backendBaseUrl}${documentUrl}`;
+  };
 
-    const initViewer = async () => {
+  useEffect(() => {
+    const url = getPdfUrl();
+    
+    // Check if PDF URL is valid
+    const checkPdf = async () => {
       try {
         setIsLoading(true);
         setError(null);
-
-        // Check if Foxit SDK is available
-        const foxitSDKPath = process.env.NEXT_PUBLIC_FOXIT_SDK_PATH || '/foxit-lib';
-        const licenseKey = process.env.NEXT_PUBLIC_FOXIT_LICENSE_KEY;
-
-        if (!licenseKey || licenseKey === 'trial-license-key') {
-          throw new Error('Foxit license key not configured. Please set NEXT_PUBLIC_FOXIT_LICENSE_KEY in your .env.local file.');
-        }
-
-        // Dynamically import Foxit SDK
-        const PDFViewerSDK = await import('@foxitsoftware/foxit-pdf-sdk-for-web-library');
-
-        if (!isMounted) return;
-
-        // Initialize viewer
-        viewer = new PDFViewerSDK.default({
-          libPath: foxitSDKPath,
-          jr: {
-            licenseSN: 'foxit-trial',
-            licenseKey: licenseKey,
-          },
-        });
-
-        if (!containerRef.current) return;
-
-        // Open PDF document
-        const doc = await viewer.openPDFByHttpRangeRequest(documentUrl, {});
         
-        if (!isMounted) return;
-
-        viewerRef.current = viewer;
-
-        // Get document info
-        const pageCount = await doc.getPageCount();
-        setTotalPages(pageCount);
+        // Try HEAD first, fall back to GET if not supported
+        let response = await fetch(url, { method: 'HEAD' });
+        
+        // If HEAD returns 405 (Method Not Allowed), try GET
+        if (response.status === 405) {
+          response = await fetch(url, { method: 'GET', headers: { 'Range': 'bytes=0-0' } });
+        }
+        
+        if (!response.ok && response.status !== 206) {
+          throw new Error(`PDF not found (${response.status})`);
+        }
+        
         setIsLoading(false);
-
         if (onDocumentLoad) {
           onDocumentLoad();
         }
       } catch (err) {
-        console.error('Failed to initialize PDF viewer:', err);
+        console.error('Failed to load PDF:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to load PDF document';
         setError(errorMessage);
         setIsLoading(false);
@@ -99,75 +84,42 @@ export function PDFViewer({
       }
     };
 
-    initViewer();
-
-    return () => {
-      isMounted = false;
-      if (viewer) {
-        try {
-          viewer.destroy();
-        } catch (err) {
-          console.error('Error cleaning up viewer:', err);
-        }
-      }
-    };
+    if (documentUrl) {
+      checkPdf();
+    } else {
+      setError('No PDF URL provided');
+      setIsLoading(false);
+    }
   }, [documentUrl, onDocumentLoad, onDocumentError]);
 
   const handleZoomIn = () => {
-    const newScale = Math.min(scale + 0.25, 3.0);
-    setScale(newScale);
-    if (viewerRef.current) {
-      viewerRef.current.zoomTo(newScale);
-    }
+    setScale((prev) => Math.min(prev + 25, 200));
   };
 
   const handleZoomOut = () => {
-    const newScale = Math.max(scale - 0.25, 0.5);
-    setScale(newScale);
-    if (viewerRef.current) {
-      viewerRef.current.zoomTo(newScale);
-    }
-  };
-
-  const handleRotate = () => {
-    const newRotation = (rotation + 90) % 360;
-    setRotation(newRotation);
-    if (viewerRef.current) {
-      viewerRef.current.rotatePage(newRotation);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1 && viewerRef.current) {
-      const newPage = currentPage - 1;
-      setCurrentPage(newPage);
-      viewerRef.current.goToPage(newPage - 1); // 0-indexed
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages && viewerRef.current) {
-      const newPage = currentPage + 1;
-      setCurrentPage(newPage);
-      viewerRef.current.goToPage(newPage - 1); // 0-indexed
-    }
+    setScale((prev) => Math.max(prev - 25, 50));
   };
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(documentUrl);
+      const url = getPdfUrl();
+      const response = await fetch(url);
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = downloadUrl;
       a.download = fileName || 'invoice.pdf';
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(downloadUrl);
       document.body.removeChild(a);
     } catch (err) {
       console.error('Failed to download PDF:', err);
     }
+  };
+
+  const handleOpenInNewTab = () => {
+    window.open(getPdfUrl(), '_blank');
   };
 
   const toggleFullscreen = () => {
@@ -200,7 +152,7 @@ export function PDFViewer({
   if (isLoading) {
     return (
       <Card className={`p-8 ${className}`}>
-        <div className="flex flex-col items-center justify-center min-h-[600px] space-y-4">
+        <div className="flex flex-col items-center justify-center h-[400px] space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           <p className="text-sm text-muted-foreground">Loading PDF document...</p>
         </div>
@@ -211,74 +163,47 @@ export function PDFViewer({
   if (error) {
     return (
       <Card className={`p-8 ${className}`}>
-        <div className="flex flex-col items-center justify-center min-h-[600px] space-y-4">
-          <div className="rounded-full bg-destructive/10 p-3">
-            <svg
-              className="h-6 w-6 text-destructive"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+        <div className="flex flex-col items-center justify-center h-[400px] space-y-4">
+          <div className="rounded-full bg-muted p-4">
+            <FileText className="h-8 w-8 text-muted-foreground" />
           </div>
           <div className="text-center">
-            <h3 className="font-semibold text-lg mb-2">Failed to Load PDF</h3>
-            <p className="text-sm text-muted-foreground max-w-md">{error}</p>
+            <h3 className="font-semibold text-lg mb-2">PDF Preview Unavailable</h3>
+            <p className="text-sm text-muted-foreground max-w-md mb-4">{error}</p>
+            {documentUrl && (
+              <Button variant="outline" onClick={handleOpenInNewTab}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open PDF in New Tab
+              </Button>
+            )}
           </div>
         </div>
       </Card>
     );
   }
 
+  const pdfUrl = getPdfUrl();
+
   return (
     <div ref={containerRef} className={`flex flex-col ${className}`}>
       {/* Toolbar */}
       <Card className="p-2 mb-2">
         <div className="flex items-center justify-between gap-2">
-          {/* Page Navigation */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm min-w-[100px] text-center">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
           {/* Zoom Controls */}
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleZoomOut} disabled={scale <= 0.5}>
+            <Button variant="outline" size="sm" onClick={handleZoomOut} disabled={scale <= 50}>
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="text-sm min-w-[60px] text-center">{Math.round(scale * 100)}%</span>
-            <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={scale >= 3.0}>
+            <span className="text-sm min-w-[60px] text-center">{scale}%</span>
+            <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={scale >= 200}>
               <ZoomIn className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Action Controls */}
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleRotate}>
-              <RotateCw className="h-4 w-4" />
+            <Button variant="outline" size="sm" onClick={handleOpenInNewTab}>
+              <ExternalLink className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" onClick={handleDownload}>
               <Download className="h-4 w-4" />
@@ -294,10 +219,23 @@ export function PDFViewer({
         </div>
       </Card>
 
-      {/* PDF Viewer Container */}
-      <Card className="flex-1 min-h-[600px] overflow-hidden">
-        <div className="w-full h-full bg-muted/30" id="pdf-viewer-container">
-          {/* Foxit PDF viewer will be rendered here */}
+      {/* PDF Viewer Container - Using iframe with browser's built-in PDF viewer */}
+      <Card className="overflow-hidden" style={{ height: '1000px' }}>
+        <div 
+          className="w-full h-full bg-muted/30" 
+          style={{ 
+            transform: `scale(${scale / 100})`,
+            transformOrigin: 'top left',
+            width: `${10000 / scale}%`,
+            height: `${10000 / scale}%`,
+          }}
+        >
+          <iframe
+            ref={iframeRef}
+            src={`${pdfUrl}#toolbar=1&navpanes=0&scrollbar=1`}
+            className="w-full h-full border-0"
+            title={fileName || 'PDF Document'}
+          />
         </div>
       </Card>
     </div>

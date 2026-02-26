@@ -22,8 +22,12 @@ from .workflow_state import WorkflowState, create_initial_state, ProcessingDecis
 from .workflow_nodes import WorkflowNodes
 from .workflow_graph import create_workflow_graph
 
+from ..services.processing_event_service import ProcessingEventService
+
 
 logger = logging.getLogger(__name__)
+
+event_service = ProcessingEventService()
 
 
 class InvoiceProcessingOrchestrator:
@@ -94,6 +98,15 @@ class InvoiceProcessingOrchestrator:
             Exception: If workflow execution fails critically
         """
         logger.info(f"Starting invoice processing for document {document_id}")
+
+        await event_service.emit(
+            entity_type="invoice",
+            entity_id=document_id,
+            stage="workflow",
+            status="started",
+            message="Workflow execution started",
+            details={"vendor_id": vendor_id},
+        )
         
         try:
             # Create initial state
@@ -113,6 +126,19 @@ class InvoiceProcessingOrchestrator:
                 f"status={final_state.get('status')}, "
                 f"time={final_state.get('processing_time_ms')}ms"
             )
+
+            await event_service.emit(
+                entity_type="invoice",
+                entity_id=document_id,
+                stage="workflow",
+                status="succeeded",
+                message="Workflow execution completed",
+                details={
+                    "decision": str(final_state.get("decision")),
+                    "status": str(final_state.get("status")),
+                    "processing_time_ms": final_state.get("processing_time_ms"),
+                },
+            )
             
             # Save final state to database (optional - could persist state for audit)
             await self._save_workflow_state(final_state)
@@ -123,6 +149,15 @@ class InvoiceProcessingOrchestrator:
             logger.error(
                 f"Invoice processing failed for {document_id}: {str(e)}",
                 exc_info=True,
+            )
+
+            await event_service.emit_error(
+                entity_type="invoice",
+                entity_id=document_id,
+                stage="workflow",
+                message="Workflow execution failed",
+                error=e,
+                details={"vendor_id": vendor_id},
             )
             
             # Return error state
@@ -195,13 +230,12 @@ class InvoiceProcessingOrchestrator:
             
             return {
                 "document_id": document_id,
-                "extraction_status": invoice.extraction_status,
-                "processing_status": invoice.processing_status,
+                "status": invoice.status.value if hasattr(invoice.status, 'value') else invoice.status,
                 "requires_review": invoice.requires_review,
                 "matching_completed": matching_result is not None,
                 "match_score": float(matching_result.match_score) if matching_result else None,
                 "risk_completed": risk_assessment is not None,
-                "risk_level": risk_assessment.risk_level if risk_assessment else None,
+                "risk_level": risk_assessment.risk_level.value if risk_assessment and hasattr(risk_assessment.risk_level, 'value') else (risk_assessment.risk_level if risk_assessment else None),
                 "last_updated": invoice.updated_at.isoformat() if invoice.updated_at else None,
             }
             
@@ -211,6 +245,8 @@ class InvoiceProcessingOrchestrator:
                 "document_id": document_id,
                 "status": "error",
                 "message": str(e),
+                "matching_completed": False,
+                "risk_completed": False,
             }
     
     async def reprocess_invoice(

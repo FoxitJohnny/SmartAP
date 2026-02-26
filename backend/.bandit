@@ -1,0 +1,30 @@
+# Bandit Security Configuration
+# https://bandit.readthedocs.io/en/latest/config.html
+
+[bandit]
+# Exclude test files and migrations
+exclude_dirs = ["tests", "alembic", ".venv", "venv", "__pycache__", ".git"]
+
+# Skip specific test IDs
+# B101: assert_used - We use asserts in tests
+# B104: hardcoded_bind_all_interfaces - Handled by deployment config
+# B311: random - We don't use random for security purposes
+skips = ["B101", "B311"]
+
+# Severity threshold (low, medium, high)
+# Only report medium and above in CI
+severity = "medium"
+
+# Confidence threshold (low, medium, high)
+confidence = "medium"
+
+# Output format
+format = "json"
+
+[bandit.assert_used]
+# Allow asserts in test files
+skips = ["*_test.py", "test_*.py", "**/tests/**"]
+
+[bandit.hardcoded_password_string]
+# Common variable names that might contain passwords
+word_list = ["password", "passwd", "pwd", "secret", "token", "api_key", "apikey", "auth"]

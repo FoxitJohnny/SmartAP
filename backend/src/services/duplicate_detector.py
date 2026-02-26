@@ -8,6 +8,7 @@ from typing import List, Optional, Tuple
 from datetime import datetime, timedelta
 
 from ..models import Invoice, DuplicateInfo
+from ..models.risk import RiskFlagType
 from ..db.repositories import InvoiceRepository
 
 
@@ -19,8 +20,12 @@ class DuplicateDetector:
     FUZZY_DUPLICATE_DAYS = 30  # Look back 30 days for fuzzy duplicates
     AMOUNT_TOLERANCE = 0.02    # 2% tolerance for amount matching
     
-    def __init__(self, invoice_repo: InvoiceRepository):
+    def __init__(self, invoice_repo: InvoiceRepository, settings: dict | None = None):
         self.invoice_repo = invoice_repo
+        if settings:
+            self.EXACT_DUPLICATE_DAYS = settings.get("duplicate_exact_days", self.EXACT_DUPLICATE_DAYS)
+            self.FUZZY_DUPLICATE_DAYS = settings.get("duplicate_fuzzy_days", self.FUZZY_DUPLICATE_DAYS)
+            self.AMOUNT_TOLERANCE = settings.get("duplicate_amount_tolerance", self.AMOUNT_TOLERANCE)
     
     async def detect_duplicates(
         self,
@@ -76,6 +81,10 @@ class DuplicateDetector:
         )
         
         for existing in existing_invoices:
+            # Skip if this is the same invoice (by document_id)
+            if invoice.document_id and existing.document_id == invoice.document_id:
+                continue
+            
             # Skip if no invoice data
             if not existing.invoice_data:
                 continue
@@ -89,16 +98,20 @@ class DuplicateDetector:
                 if existing_date_str:
                     try:
                         existing_date = datetime.fromisoformat(existing_date_str.replace("Z", "+00:00"))
-                        days_diff = abs((invoice.invoice_date - existing_date).days)
+                        # Handle date vs datetime
+                        if hasattr(invoice.invoice_date, 'day') and not hasattr(invoice.invoice_date, 'hour'):
+                            invoice_date_dt = datetime.combine(invoice.invoice_date, datetime.min.time())
+                        else:
+                            invoice_date_dt = invoice.invoice_date
+                        days_diff = abs((invoice_date_dt - existing_date).days)
                         
                         if days_diff <= self.EXACT_DUPLICATE_DAYS:
                             return DuplicateInfo(
                                 is_duplicate=True,
                                 duplicate_invoice_id=existing.document_id,
                                 duplicate_invoice_number=existing_inv_num,
-                                match_type="exact_invoice_number",
-                                confidence_score=1.0,
-                                days_apart=days_diff,
+                                duplicate_type=RiskFlagType.DUPLICATE_NEAR,
+                                similarity_score=1.0,
                             )
                     except (ValueError, AttributeError):
                         pass
@@ -117,15 +130,24 @@ class DuplicateDetector:
         )
         
         for existing in existing_invoices:
+            # Skip if this is the same invoice (by document_id)
+            if invoice.document_id and existing.document_id == invoice.document_id:
+                continue
+            
             if not existing.invoice_data:
                 continue
             
             # Check amount match (within tolerance)
-            existing_amount = existing.invoice_data.get("total_amount", 0)
+            raw_amount = existing.invoice_data.get("total", existing.invoice_data.get("total_amount", 0))
+            try:
+                existing_amount = float(raw_amount)
+            except (TypeError, ValueError):
+                existing_amount = 0.0
             if existing_amount == 0:
                 continue
             
-            amount_diff = abs(invoice.total_amount - existing_amount) / existing_amount
+            invoice_total = float(invoice.total) if invoice.total else 0.0
+            amount_diff = abs(invoice_total - existing_amount) / existing_amount
             
             if amount_diff <= self.AMOUNT_TOLERANCE:
                 # Check date proximity (within 30 days)
@@ -133,7 +155,12 @@ class DuplicateDetector:
                 if existing_date_str:
                     try:
                         existing_date = datetime.fromisoformat(existing_date_str.replace("Z", "+00:00"))
-                        days_diff = abs((invoice.invoice_date - existing_date).days)
+                        # Handle date vs datetime
+                        if hasattr(invoice.invoice_date, 'day') and not hasattr(invoice.invoice_date, 'hour'):
+                            invoice_date_dt = datetime.combine(invoice.invoice_date, datetime.min.time())
+                        else:
+                            invoice_date_dt = invoice.invoice_date
+                        days_diff = abs((invoice_date_dt - existing_date).days)
                         
                         if days_diff <= self.FUZZY_DUPLICATE_DAYS:
                             # Calculate confidence based on amount match and date proximity
@@ -149,10 +176,8 @@ class DuplicateDetector:
                                     is_duplicate=True,
                                     duplicate_invoice_id=existing.document_id,
                                     duplicate_invoice_number=existing_inv_num,
-                                    match_type="fuzzy_amount_date",
-                                    confidence_score=confidence,
-                                    days_apart=days_diff,
-                                    amount_difference=abs(invoice.total_amount - existing_amount),
+                                    duplicate_type=RiskFlagType.DUPLICATE_SIMILAR,
+                                    similarity_score=confidence,
                                 )
                     except (ValueError, AttributeError):
                         pass

@@ -73,11 +73,48 @@ export interface AnalyticsFilters {
 }
 
 // API Functions
+
+// Transform backend response to expected frontend format
+function transformMetricsResponse(data: Record<string, unknown>): DashboardMetrics {
+  return {
+    totalInvoices: {
+      value: Number(data.total_invoices || 0),
+      change: 0,
+      trend: 'neutral',
+    },
+    pendingApprovals: {
+      value: Number(data.pending_invoices || 0),
+      change: 0,
+      trend: 'neutral',
+    },
+    riskFlags: {
+      value: Number(data.high_risk_invoices || 0),
+      change: 0,
+      trend: 'neutral',
+    },
+    stpRate: {
+      value: Number(data.processing_rate || 0).toFixed(1),
+      change: 0,
+      trend: 'neutral',
+    },
+    avgProcessingTime: {
+      value: Number(data.avg_processing_time || 0),
+      change: 0,
+      trend: 'neutral',
+    },
+    totalValue: {
+      value: Number(data.total_value || 0),
+      change: 0,
+      trend: 'neutral',
+    },
+  };
+}
+
 export const getDashboardMetrics = async (
   filters?: AnalyticsFilters
 ): Promise<DashboardMetrics> => {
   const { data } = await apiClient.get('/analytics/metrics', { params: filters });
-  return data;
+  return transformMetricsResponse(data);
 };
 
 export const getInvoiceVolume = async (

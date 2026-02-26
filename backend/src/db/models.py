@@ -132,6 +132,14 @@ class POLineItemDB(Base):
     sku: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     unit: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     received_quantity: Mapped[float] = mapped_column(Float, default=0.0)
+
+    @property
+    def total_amount(self) -> Decimal:
+        return self.amount
+
+    @total_amount.setter
+    def total_amount(self, value: Decimal) -> None:
+        self.amount = value
     
     # Relationship back to purchase order
     purchase_order: Mapped["PurchaseOrderDB"] = relationship(back_populates="line_items")
@@ -285,6 +293,9 @@ class MatchingResultDB(Base):
     # Metadata
     matched_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     matched_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+    # AI evaluation payload (optional)
+    ai_evaluation: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     
     # Relationships
     invoice: Mapped["InvoiceDB"] = relationship(back_populates="matching_results")
@@ -311,6 +322,7 @@ class RiskAssessmentDB(Base):
     vendor_risk_score: Mapped[float] = mapped_column(Float, default=0.0)
     price_risk_score: Mapped[float] = mapped_column(Float, default=0.0)
     amount_risk_score: Mapped[float] = mapped_column(Float, default=0.0)
+    matching_risk_score: Mapped[float] = mapped_column(Float, default=0.0)
     pattern_risk_score: Mapped[float] = mapped_column(Float, default=0.0)
     
     # Flags (stored as JSON)
@@ -318,8 +330,10 @@ class RiskAssessmentDB(Base):
     critical_flags: Mapped[int] = mapped_column(Integer, default=0)
     high_flags: Mapped[int] = mapped_column(Integer, default=0)
     
-    # Duplicate info (stored as JSON)
+    # Detailed info (stored as JSON)
     duplicate_info: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    vendor_risk_info: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    price_anomaly_info: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     
     # Recommendation
     recommended_action: Mapped[RecommendedAction] = mapped_column(SQLEnum(RecommendedAction))
@@ -333,6 +347,34 @@ class RiskAssessmentDB(Base):
     
     # Relationship
     invoice: Mapped["InvoiceDB"] = relationship(back_populates="risk_assessments")
+
+
+class ProcessingEventDB(Base):
+    """Persistent processing log events for tracing workflows."""
+
+    __tablename__ = "processing_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    # What this event is about
+    entity_type: Mapped[str] = mapped_column(String(50), index=True)  # e.g. invoice, po, approval
+    entity_id: Mapped[str] = mapped_column(String(100), index=True)  # e.g. document_id
+
+    # Where in the pipeline
+    stage: Mapped[str] = mapped_column(String(100), index=True)  # e.g. upload, extract, match, risk, approval
+    status: Mapped[str] = mapped_column(String(30), index=True)  # started|succeeded|failed
+    level: Mapped[str] = mapped_column(String(20), index=True, default="INFO")  # DEBUG|INFO|WARNING|ERROR
+
+    # Human readable
+    message: Mapped[str] = mapped_column(Text)
+
+    # Optional structured payload
+    details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
+    # Correlation (request id, job id, etc.)
+    correlation_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
 
 class UserDB(Base):
@@ -396,3 +438,97 @@ class RefreshTokenDB(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
+
+
+class MatchingSettingsDB(Base):
+    """Matching algorithm settings - configurable by user."""
+    __tablename__ = "matching_settings"
+    
+    # Primary key
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    
+    # Settings name (e.g., "default", "custom")
+    name: Mapped[str] = mapped_column(String(100), unique=True, index=True, default="default")
+    
+    # Vendor matching settings
+    vendor_fuzzy_threshold: Mapped[float] = mapped_column(Float, default=0.80)  # Min similarity for vendor match
+    vendor_match_weight: Mapped[float] = mapped_column(Float, default=0.30)  # Weight in overall score
+    
+    # Amount matching settings
+    amount_tolerance_percent: Mapped[float] = mapped_column(Float, default=0.20)  # ±20% tolerance
+    amount_match_tolerance: Mapped[float] = mapped_column(Float, default=0.05)  # ±5% tolerance for amount score
+    amount_match_weight: Mapped[float] = mapped_column(Float, default=0.30)  # Weight in overall score
+    
+    # Date matching settings
+    date_tolerance_days: Mapped[int] = mapped_column(Integer, default=30)  # Days after PO date
+    date_match_weight: Mapped[float] = mapped_column(Float, default=0.10)  # Weight in overall score
+    
+    # Line items matching settings
+    line_items_match_weight: Mapped[float] = mapped_column(Float, default=0.30)  # Weight in overall score
+    line_item_description_threshold: Mapped[float] = mapped_column(Float, default=0.70)  # Min description similarity
+    line_item_amount_tolerance: Mapped[float] = mapped_column(Float, default=0.10)  # ±10% tolerance per line
+    
+    # Overall matching thresholds
+    exact_match_threshold: Mapped[float] = mapped_column(Float, default=0.95)  # Score for exact match
+    good_match_threshold: Mapped[float] = mapped_column(Float, default=0.85)  # Score for good/fuzzy match
+    acceptable_match_threshold: Mapped[float] = mapped_column(Float, default=0.70)  # Min score for auto-approval
+    review_threshold: Mapped[float] = mapped_column(Float, default=0.60)  # Below this requires manual review
+    
+    # AI settings
+    use_ai_for_ambiguous: Mapped[bool] = mapped_column(Boolean, default=True)
+    ai_confidence_threshold: Mapped[float] = mapped_column(Float, default=0.75)  # Min AI confidence to accept
+    
+    # Discrepancy settings
+    max_amount_discrepancy_for_auto_approve: Mapped[float] = mapped_column(Float, default=100.0)  # Max $ difference
+    critical_discrepancy_blocks_approval: Mapped[bool] = mapped_column(Boolean, default=True)
+    
+    # Metadata
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+
+class RiskSettingsDB(Base):
+    """Risk detection settings - configurable by user."""
+    __tablename__ = "risk_settings"
+
+    # Primary key
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True, index=True, default="default")
+
+    # --- Component weights (must sum to 1.0) ---
+    weight_duplicate: Mapped[float] = mapped_column(Float, default=0.25)
+    weight_vendor: Mapped[float] = mapped_column(Float, default=0.20)
+    weight_price: Mapped[float] = mapped_column(Float, default=0.15)
+    weight_amount: Mapped[float] = mapped_column(Float, default=0.10)
+    weight_matching: Mapped[float] = mapped_column(Float, default=0.20)
+    weight_pattern: Mapped[float] = mapped_column(Float, default=0.10)
+
+    # --- Price anomaly detection ---
+    price_std_dev_threshold: Mapped[float] = mapped_column(Float, default=2.0)
+    price_min_historical_invoices: Mapped[int] = mapped_column(Integer, default=2)
+    price_significant_amount: Mapped[float] = mapped_column(Float, default=1000.0)
+    price_minor_increase: Mapped[float] = mapped_column(Float, default=0.15)
+    price_major_increase: Mapped[float] = mapped_column(Float, default=0.30)
+    price_critical_increase: Mapped[float] = mapped_column(Float, default=0.50)
+
+    # --- Duplicate detection ---
+    duplicate_exact_days: Mapped[int] = mapped_column(Integer, default=90)
+    duplicate_fuzzy_days: Mapped[int] = mapped_column(Integer, default=30)
+    duplicate_amount_tolerance: Mapped[float] = mapped_column(Float, default=0.02)
+
+    # --- Vendor risk ---
+    vendor_low_risk_threshold: Mapped[float] = mapped_column(Float, default=0.25)
+    vendor_medium_risk_threshold: Mapped[float] = mapped_column(Float, default=0.50)
+    vendor_high_risk_threshold: Mapped[float] = mapped_column(Float, default=0.75)
+    vendor_good_payment_reliability: Mapped[float] = mapped_column(Float, default=0.90)
+    vendor_acceptable_payment_reliability: Mapped[float] = mapped_column(Float, default=0.75)
+    vendor_inactive_days: Mapped[int] = mapped_column(Integer, default=180)
+    vendor_new_vendor_days: Mapped[int] = mapped_column(Integer, default=90)
+
+    # Metadata
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)

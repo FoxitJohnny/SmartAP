@@ -143,7 +143,11 @@ export default function DashboardPage() {
             ) : recentActivity && recentActivity.length > 0 ? (
               <div className="space-y-4">
                 {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-center gap-4 rounded-lg border p-3">
+                  <Link
+                    key={activity.id}
+                    href={`/invoices/${activity.id}`}
+                    className="flex items-center gap-4 rounded-lg border p-3 hover:bg-accent transition-colors"
+                  >
                     {getActivityIcon(activity.type)}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
@@ -156,7 +160,7 @@ export default function DashboardPage() {
                     <div className="text-xs text-muted-foreground">
                       {format(new Date(activity.timestamp), 'MMM d, HH:mm')}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (

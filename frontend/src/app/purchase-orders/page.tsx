@@ -36,8 +36,8 @@ export default function PurchaseOrdersPage() {
     setPage(1);
   };
 
-  const handleViewPO = (id: string) => {
-    router.push(`/purchase-orders/${id}`);
+  const handleViewPO = (poNumber: string) => {
+    router.push(`/purchase-orders/${encodeURIComponent(poNumber)}`);
   };
 
   const getStatusIcon = (status: string) => {
@@ -45,6 +45,7 @@ export default function PurchaseOrdersPage() {
       case 'OPEN':
         return <ClockIcon className="h-4 w-4" />;
       case 'PARTIALLY_MATCHED':
+      case 'PARTIALLY_RECEIVED':
         return <AlertCircleIcon className="h-4 w-4" />;
       case 'CLOSED':
         return <CheckCircleIcon className="h-4 w-4" />;
@@ -60,6 +61,7 @@ export default function PurchaseOrdersPage() {
       case 'OPEN':
         return 'bg-blue-100 text-blue-700';
       case 'PARTIALLY_MATCHED':
+      case 'PARTIALLY_RECEIVED':
         return 'bg-yellow-100 text-yellow-700';
       case 'CLOSED':
         return 'bg-green-100 text-green-700';
@@ -114,7 +116,7 @@ export default function PurchaseOrdersPage() {
               <DownloadIcon className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={() => router.push('/purchase-orders/new')}>
               <PlusIcon className="h-4 w-4 mr-2" />
               Create PO
             </Button>
@@ -148,6 +150,7 @@ export default function PurchaseOrdersPage() {
                   <label className="text-sm font-medium">Status</label>
                   <select
                     className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2"
+                    aria-label="Status"
                     value={filters.status || ''}
                     onChange={(e) => {
                       setFilters({ ...filters, status: e.target.value });
@@ -201,7 +204,7 @@ export default function PurchaseOrdersPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {data && data.data.length > 0 ? (
+            {data?.data && data.data.length > 0 ? (
               <div className="space-y-4">
                 <div className="rounded-md border">
                   <table className="w-full">
@@ -223,7 +226,7 @@ export default function PurchaseOrdersPage() {
                         <tr
                           key={po.id}
                           className="hover:bg-muted/50 cursor-pointer"
-                          onClick={() => handleViewPO(po.id)}
+                          onClick={() => handleViewPO(po.po_number)}
                         >
                           <td className="px-4 py-3">
                             <div className="font-medium">{po.po_number}</div>
@@ -260,7 +263,7 @@ export default function PurchaseOrdersPage() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleViewPO(po.id);
+                                handleViewPO(po.po_number);
                               }}
                             >
                               <EyeIcon className="h-4 w-4" />
@@ -307,7 +310,7 @@ export default function PurchaseOrdersPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Create your first purchase order to get started
                 </p>
-                <Button>
+                <Button onClick={() => router.push('/purchase-orders/new')}>
                   <PlusIcon className="h-4 w-4 mr-2" />
                   Create Purchase Order
                 </Button>

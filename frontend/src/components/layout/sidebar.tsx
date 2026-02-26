@@ -68,6 +68,43 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
+  {
+    title: 'Processing Logs',
+    href: '/processing',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Settings',
+    href: '/settings/matching',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M11.049 2.927c.3-.921 1.603-.921 1.902 0a1.724 1.724 0 002.573 1.008c.835-.483 1.87.552 1.387 1.387a1.724 1.724 0 001.008 2.573c.921.3.921 1.603 0 1.902a1.724 1.724 0 00-1.008 2.573c.483.835-.552 1.87-1.387 1.387a1.724 1.724 0 00-2.573 1.008c-.3.921-1.603.921-1.902 0a1.724 1.724 0 00-2.573-1.008c-.835.483-1.87-.552-1.387-1.387a1.724 1.724 0 00-1.008-2.573c-.921-.3-.921-1.603 0-1.902a1.724 1.724 0 001.008-2.573c-.483-.835.552-1.87 1.387-1.387.909.526 2.076.04 2.573-1.008z"
+        />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+    children: [
+      { title: 'Matching', href: '/settings/matching' },
+      { title: 'Risk', href: '/settings/risk' },
+    ],
+  },
+  {
+    title: 'Users',
+    href: '/admin/users',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+    ),
+  },
 ];
 
 export function Sidebar() {
@@ -110,13 +147,16 @@ export function Sidebar() {
           <ul className="space-y-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+              const isParentActive = item.children?.some(
+                (child) => pathname === child.href || pathname?.startsWith(`${child.href}/`)
+              );
               return (
                 <li key={item.href}>
                   <Link
-                    href={item.href}
+                    href={item.children ? item.children[0].href : item.href}
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                      isActive
+                      isActive || isParentActive
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                     )}
@@ -129,6 +169,28 @@ export function Sidebar() {
                       </span>
                     )}
                   </Link>
+                  {item.children && (isActive || isParentActive) && (
+                    <ul className="ml-8 mt-1 space-y-1">
+                      {item.children.map((child) => {
+                        const isChildActive = pathname === child.href;
+                        return (
+                          <li key={child.href}>
+                            <Link
+                              href={child.href}
+                              className={cn(
+                                'block rounded-md px-3 py-1.5 text-sm transition-colors',
+                                isChildActive
+                                  ? 'bg-accent font-medium text-accent-foreground'
+                                  : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+                              )}
+                            >
+                              {child.title}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </li>
               );
             })}

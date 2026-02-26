@@ -34,6 +34,9 @@ class RiskFlagType(str, Enum):
     AMOUNT_ROUND = "amount_round"                    # Suspiciously round amount
     PATTERN_ANOMALY = "pattern_anomaly"              # Unusual pattern detected
     MULTIPLE_INVOICES_SAME_DAY = "multiple_invoices_same_day"  # Multiple invoices same day
+    MATCHING_NO_MATCH = "matching_no_match"            # No PO match found
+    MATCHING_LOW_SCORE = "matching_low_score"          # PO match score below threshold
+    MATCHING_DISCREPANCY = "matching_discrepancy"      # Critical discrepancies with matched PO
 
 
 class RecommendedAction(str, Enum):
@@ -65,6 +68,9 @@ class RiskFlag(BaseModel):
     # Resolution
     requires_action: bool = Field(default=True, description="Whether action is required")
     suggested_action: Optional[str] = Field(default=None, description="Suggested mitigation action")
+    
+    # Structured details (arbitrary key-value data for this flag)
+    details: Optional[dict] = Field(default=None, description="Additional structured details")
     
     class Config:
         json_schema_extra = {
@@ -138,6 +144,7 @@ class RiskAssessment(BaseModel):
     vendor_risk_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Vendor risk")
     price_risk_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Price anomaly risk")
     amount_risk_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Amount anomaly risk")
+    matching_risk_score: float = Field(default=0.0, ge=0.0, le=1.0, description="PO matching risk")
     pattern_risk_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Pattern anomaly risk")
     
     # Flags
@@ -148,7 +155,7 @@ class RiskAssessment(BaseModel):
     # Detailed info
     duplicate_info: Optional[DuplicateInfo] = Field(default=None, description="Duplicate detection details")
     vendor_risk_info: Optional[VendorRiskInfo] = Field(default=None, description="Vendor risk details")
-    price_anomalies: List[PriceAnomalyInfo] = Field(default_factory=list, description="Price anomalies")
+    price_anomaly_info: Optional[PriceAnomalyInfo] = Field(default=None, description="Price anomaly details")
     
     # Recommendation
     recommended_action: RecommendedAction = Field(..., description="Recommended action")
@@ -201,6 +208,7 @@ class RiskAssessment(BaseModel):
                 "vendor_risk_score": 0.1,
                 "price_risk_score": 0.2,
                 "amount_risk_score": 0.05,
+                "matching_risk_score": 0.0,
                 "critical_flags": 0,
                 "high_flags": 0,
                 "recommended_action": "auto_approve",

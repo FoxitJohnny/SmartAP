@@ -1,0 +1,36 @@
+# CODEOWNERS - Defines code owners for automatic PR review requests
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+* @smartap-maintainers
+
+# Backend code
+/backend/ @backend-team
+/backend/src/api/ @backend-team @api-team
+/backend/src/services/ @backend-team
+/backend/src/db/ @backend-team @database-team
+/backend/tests/ @backend-team @qa-team
+
+# Frontend code
+/frontend/ @frontend-team
+/frontend/src/components/ @frontend-team @design-team
+/frontend/src/app/ @frontend-team
+
+# E2E tests
+/e2e/ @qa-team @frontend-team
+
+# Infrastructure
+/k8s/ @devops-team
+/helm/ @devops-team
+/.github/workflows/ @devops-team
+/docker-compose.yml @devops-team
+
+# Documentation
+/docs/ @documentation-team
+*.md @documentation-team
+
+# Configuration files
+*.json @devops-team
+*.yaml @devops-team
+*.yml @devops-team
+*.toml @devops-team

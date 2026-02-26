@@ -113,6 +113,20 @@ export interface VendorRiskHistory {
   reason?: string;
 }
 
+export interface VendorPurchaseOrder {
+  id: string;
+  po_number: string;
+  amount: number;
+  total_amount: number;
+  currency: string;
+  status: string;
+  order_date?: string;
+  expected_delivery_date?: string;
+  items_count: number;
+  matched_invoices_count: number;
+  vendor_name: string;
+}
+
 export interface VendorPerformanceMetrics {
   total_invoices: number;
   total_amount: number;
@@ -127,6 +141,36 @@ export interface VendorPerformanceMetrics {
   risk_events_by_type: Array<{ type: string; count: number }>;
 }
 
+// Transform API vendor item to frontend format
+function transformVendorListItem(item: Record<string, unknown>): VendorListItem {
+  const status = String(item.status || 'active').toLowerCase();
+  const riskLevel = String(item.risk_level || '').toUpperCase();
+  const validLevels = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
+  return {
+    id: String(item.id),
+    name: String(item.name || ''),
+    vendor_code: String(item.vendor_code || item.id || ''),
+    email: item.email ? String(item.email) : undefined,
+    phone: item.phone ? String(item.phone) : undefined,
+    risk_score: Number(item.risk_score || 0),
+    risk_level: (validLevels.includes(riskLevel as typeof validLevels[number])
+      ? riskLevel
+      : getRiskLevelFromScore(Number(item.risk_score || 0))) as VendorListItem['risk_level'],
+    total_invoices: Number(item.total_invoices || 0),
+    total_amount: Number(item.total_spent || item.total_amount || 0),
+    on_time_payment_rate: Number(item.on_time_payment_rate ?? 100),
+    active: status === 'active',
+    last_invoice_date: item.last_invoice_date ? String(item.last_invoice_date) : undefined,
+  };
+}
+
+function getRiskLevelFromScore(score: number): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
+  if (score >= 80) return 'CRITICAL';
+  if (score >= 60) return 'HIGH';
+  if (score >= 40) return 'MEDIUM';
+  return 'LOW';
+}
+
 // API Functions
 export const getVendors = async (
   page: number = 1,
@@ -135,7 +179,14 @@ export const getVendors = async (
   const { data } = await apiClient.get('/vendors', {
     params: { page, ...filters },
   });
-  return data;
+  // Transform API response (items -> data)
+  const items = data.items || data.data || [];
+  return {
+    data: items.map(transformVendorListItem),
+    total: data.total || 0,
+    page: data.page || 1,
+    per_page: data.limit || data.per_page || 20,
+  };
 };
 
 export const getVendor = async (id: string): Promise<Vendor> => {
@@ -187,6 +238,16 @@ export const getVendorRiskHistory = async (
   return data;
 };
 
+export const getVendorPurchaseOrders = async (
+  vendorId: string,
+  page: number = 1
+): Promise<{ data: VendorPurchaseOrder[]; total: number }> => {
+  const { data } = await apiClient.get(`/vendors/${vendorId}/purchase-orders`, {
+    params: { page },
+  });
+  return data;
+};
+
 export const getVendorPerformanceMetrics = async (
   vendorId: string
 ): Promise<VendorPerformanceMetrics> => {
@@ -232,6 +293,14 @@ export const useVendorRiskHistory = (vendorId: string) => {
   return useQuery({
     queryKey: ['vendor-risk-history', vendorId],
     queryFn: () => getVendorRiskHistory(vendorId),
+    staleTime: 60000,
+  });
+};
+
+export const useVendorPurchaseOrders = (vendorId: string, page: number = 1) => {
+  return useQuery({
+    queryKey: ['vendor-purchase-orders', vendorId, page],
+    queryFn: () => getVendorPurchaseOrders(vendorId, page),
     staleTime: 60000,
   });
 };

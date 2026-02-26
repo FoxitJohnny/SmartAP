@@ -5,11 +5,11 @@ Tests async repository operations for all entities.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 from decimal import Decimal
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
-from src.db.database import Base
+from src.db.models import Base
 from src.db.repositories import (
     InvoiceRepository,
     PurchaseOrderRepository,
@@ -33,6 +33,7 @@ from src.models import (
     MatchType,
     RiskAssessment,
     RiskLevel,
+    RecommendedAction,
 )
 
 
@@ -71,23 +72,31 @@ async def test_invoice_repository_create(session):
         invoice=Invoice(
             invoice_number="INV-001",
             vendor_name="Test Vendor",
-            invoice_date=datetime.now(),
-            due_date=datetime.now() + timedelta(days=30),
+            invoice_date=date.today(),
+            due_date=date.today() + timedelta(days=30),
             currency="USD",
-            subtotal=1000.00,
-            tax=80.00,
-            total_amount=1080.00,
+            subtotal=Decimal("1000.00"),
+            tax=Decimal("80.00"),
+            total=Decimal("1080.00"),
             line_items=[
                 InvoiceLineItem(
-                    line_number=1,
                     description="Test Item",
                     quantity=10,
-                    unit_price=100.00,
-                    amount=1000.00,
+                    unit_price=Decimal("100.00"),
+                    amount=Decimal("1000.00"),
                 )
             ],
         ),
-        confidence=ExtractionConfidence(overall=0.95),
+        confidence=ExtractionConfidence(
+            invoice_number=0.95,
+            vendor_name=0.95,
+            invoice_date=0.95,
+            due_date=0.95,
+            subtotal=0.95,
+            tax=0.95,
+            total=0.95,
+            line_items=0.95,
+        ),
         requires_review=False,
         ocr_applied=False,
         page_count=1,
@@ -150,7 +159,7 @@ async def test_vendor_repository_create(session):
             max_invoice_amount=5000.00,
             has_fraud_history=False,
         ),
-        onboarded_date=datetime.now(),
+        onboarded_date=date.today(),
     )
     
     vendor_db = await repo.create(vendor)
@@ -176,7 +185,7 @@ async def test_vendor_repository_search_by_name(session):
             payment_terms="Net 30",
             currency="USD",
             risk_profile=VendorRiskProfile(risk_score=0.1, on_time_payment_rate=0.9, invoice_count=10, avg_invoice_amount=500.0, max_invoice_amount=1000.0, has_fraud_history=False),
-            onboarded_date=datetime.now(),
+            onboarded_date=date.today(),
         ),
         Vendor(
             vendor_id="V002",
@@ -186,7 +195,7 @@ async def test_vendor_repository_search_by_name(session):
             payment_terms="Net 45",
             currency="USD",
             risk_profile=VendorRiskProfile(risk_score=0.2, on_time_payment_rate=0.85, invoice_count=5, avg_invoice_amount=1000.0, max_invoice_amount=2000.0, has_fraud_history=False),
-            onboarded_date=datetime.now(),
+            onboarded_date=date.today(),
         ),
     ]
     
@@ -210,8 +219,9 @@ async def test_po_repository_create(session):
     po = PurchaseOrder(
         po_number="PO-001",
         vendor_id="V001",
-        created_date=datetime.now(),
-        expected_delivery=datetime.now() + timedelta(days=30),
+        vendor_name="Test Vendor Inc.",
+        created_date=date.today(),
+        expected_delivery=date.today() + timedelta(days=30),
         status=POStatus.OPEN,
         currency="USD",
         subtotal=1000.00,
@@ -237,8 +247,12 @@ async def test_po_repository_create(session):
     
     assert po_db.po_number == "PO-001"
     assert po_db.total_amount == 1080.00
-    assert len(po_db.line_items) == 1
-    assert po_db.line_items[0].description == "Test Product"
+    
+    # Retrieve with line items loaded to verify
+    retrieved_po = await repo.get_by_po_number("PO-001")
+    assert retrieved_po is not None
+    assert len(retrieved_po.line_items) == 1
+    assert retrieved_po.line_items[0].description == "Test Product"
 
 
 @pytest.mark.asyncio
@@ -251,8 +265,9 @@ async def test_po_repository_find_candidates(session):
         PurchaseOrder(
             po_number="PO-001",
             vendor_id="V001",
-            created_date=datetime.now(),
-            expected_delivery=datetime.now() + timedelta(days=30),
+            vendor_name="Test Vendor",
+            created_date=date.today(),
+            expected_delivery=date.today() + timedelta(days=30),
             status=POStatus.OPEN,
             currency="USD",
             subtotal=1000.00,
@@ -265,8 +280,9 @@ async def test_po_repository_find_candidates(session):
         PurchaseOrder(
             po_number="PO-002",
             vendor_id="V001",
-            created_date=datetime.now(),
-            expected_delivery=datetime.now() + timedelta(days=30),
+            vendor_name="Test Vendor",
+            created_date=date.today(),
+            expected_delivery=date.today() + timedelta(days=30),
             status=POStatus.OPEN,
             currency="USD",
             subtotal=5000.00,
@@ -279,8 +295,9 @@ async def test_po_repository_find_candidates(session):
         PurchaseOrder(
             po_number="PO-003",
             vendor_id="V002",  # Different vendor
-            created_date=datetime.now(),
-            expected_delivery=datetime.now() + timedelta(days=30),
+            vendor_name="Other Vendor",
+            created_date=date.today(),
+            expected_delivery=date.today() + timedelta(days=30),
             status=POStatus.OPEN,
             currency="USD",
             subtotal=1000.00,
@@ -357,7 +374,7 @@ async def test_risk_repository_create(session):
         risk_flags=[],
         critical_flags=0,
         high_flags=0,
-        recommended_action="approve",
+        recommended_action=RecommendedAction.AUTO_APPROVE,
         action_reason="All checks passed",
         requires_manual_review=False,
         assessed_by="system",

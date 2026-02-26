@@ -162,7 +162,7 @@ export function InvoiceFieldOverlay({
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Qty: {item.quantity || 0} × ${item.unit_price?.toFixed(2) || '0.00'}
+                  Qty: {item.quantity || 0} × ${parseFloat(String(item.unit_price || 0)).toFixed(2)}
                 </div>
               </div>
             ))}

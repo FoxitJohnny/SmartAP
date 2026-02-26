@@ -60,7 +60,10 @@ export function ApprovalHistoryTimeline({
       .replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
-  if (!history || history.length === 0) {
+  // Ensure history is an array
+  const historyArray = Array.isArray(history) ? history : [];
+
+  if (historyArray.length === 0) {
     return (
       <Card className={`p-6 ${className}`}>
         <h3 className="text-lg font-semibold mb-4">Approval History</h3>
@@ -75,14 +78,14 @@ export function ApprovalHistoryTimeline({
   return (
     <Card className={`p-6 ${className}`}>
       <h3 className="text-lg font-semibold mb-4">
-        Approval History ({history.length})
+        Approval History ({historyArray.length})
       </h3>
 
       <div className="space-y-4">
-        {history.map((item, index) => (
+        {historyArray.map((item, index) => (
           <div key={item.id} className="relative">
             {/* Timeline line */}
-            {index < history.length - 1 && (
+            {index < historyArray.length - 1 && (
               <div className="absolute left-[18px] top-10 bottom-0 w-0.5 bg-border" />
             )}
 

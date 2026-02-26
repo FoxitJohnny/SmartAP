@@ -88,6 +88,25 @@ class Token(BaseModel):
     expires_in: int
 
 
+class UserResponse(BaseModel):
+    """User response (without sensitive data)."""
+    id: str
+    email: str
+    full_name: str
+    role: str
+    department: Optional[str] = None
+    is_active: bool
+
+
+class LoginResponse(BaseModel):
+    """Login response with user data."""
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    user: UserResponse
+
+
 class TokenRefresh(BaseModel):
     """Token refresh request."""
     refresh_token: str
@@ -102,16 +121,6 @@ class User(BaseModel):
     department: Optional[str] = None
     is_active: bool = True
     created_at: datetime
-
-
-class UserResponse(BaseModel):
-    """User response (without sensitive data)."""
-    id: str
-    email: str
-    full_name: str
-    role: str
-    department: Optional[str] = None
-    is_active: bool
 
 
 # ============================================================================
@@ -188,19 +197,62 @@ async def revoke_refresh_token(session: AsyncSession, token: str) -> None:
         await session.commit()
 
 
+DEMO_USERS = [
+    {
+        "user_id": "user_admin_001",
+        "email": "admin@smartap.dev",
+        "full_name": "Alice Admin",
+        "password": "Admin1234!",
+        "role": "admin",
+        "department": "IT",
+    },
+    {
+        "user_id": "user_finance_001",
+        "email": "finance@smartap.dev",
+        "full_name": "Frank Finance",
+        "password": "Finance1234!",
+        "role": "finance_manager",
+        "department": "Finance",
+    },
+    {
+        "user_id": "user_accountant_001",
+        "email": "accountant@smartap.dev",
+        "full_name": "Amy Accountant",
+        "password": "Account1234!",
+        "role": "accountant",
+        "department": "Accounting",
+    },
+    {
+        "user_id": "user_viewer_001",
+        "email": "viewer@smartap.dev",
+        "full_name": "Victor Viewer",
+        "password": "Viewer1234!",
+        "role": "viewer",
+        "department": "Operations",
+    },
+]
+
+
+async def ensure_demo_users(session: AsyncSession) -> None:
+    """Ensure all demo users exist in database."""
+    for u in DEMO_USERS:
+        existing = await get_user_by_email(session, u["email"])
+        if not existing:
+            await create_user_in_db(session, {
+                "user_id": u["user_id"],
+                "email": u["email"],
+                "full_name": u["full_name"],
+                "hashed_password": pwd_context.hash(u["password"]),
+                "role": u["role"],
+                "department": u["department"],
+            })
+            logger.info(f"Demo user created: {u['email']} ({u['role']})")
+
+
+# Backward-compatible alias
 async def ensure_demo_user(session: AsyncSession) -> None:
-    """Ensure demo user exists in database."""
-    existing = await get_user_by_email(session, "demo@smartap.com")
-    if not existing:
-        await create_user_in_db(session, {
-            "user_id": "user_demo_001",
-            "email": "demo@smartap.com",
-            "full_name": "Demo User",
-            "hashed_password": pwd_context.hash("Demo1234!"),
-            "role": "finance_manager",
-            "department": "Finance",
-        })
-        logger.info("Demo user created in database")
+    """Ensure demo users exist in database (backward-compatible alias)."""
+    await ensure_demo_users(session)
 
 
 # ============================================================================
@@ -361,7 +413,7 @@ async def register(
 
 @router.post(
     "/login",
-    response_model=Token,
+    response_model=LoginResponse,
     summary="Login and get access token",
     description="Authenticate with email and password to receive JWT tokens."
 )
@@ -412,17 +464,25 @@ async def login(
     # Store refresh token in database
     await store_refresh_token(session, refresh_token, user_db.user_id, expires_at)
     
-    return Token(
+    return LoginResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer",
-        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserResponse(
+            id=user_db.user_id,
+            email=user_db.email,
+            full_name=user_db.full_name,
+            role=user_db.role,
+            department=user_db.department,
+            is_active=user_db.is_active,
+        ),
     )
 
 
 @router.post(
     "/login/json",
-    response_model=Token,
+    response_model=LoginResponse,
     summary="Login with JSON body",
     description="Authenticate with JSON payload instead of form data."
 )
@@ -471,11 +531,19 @@ async def login_json(
     # Store refresh token in database
     await store_refresh_token(session, refresh_token, user_db.user_id, expires_at)
     
-    return Token(
+    return LoginResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer",
-        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserResponse(
+            id=user_db.user_id,
+            email=user_db.email,
+            full_name=user_db.full_name,
+            role=user_db.role,
+            department=user_db.department,
+            is_active=user_db.is_active,
+        ),
     )
 
 
@@ -541,6 +609,11 @@ async def refresh_token_endpoint(
     )
 
 
+class LogoutRequest(BaseModel):
+    """Logout request (refresh_token is optional)."""
+    refresh_token: Optional[str] = None
+
+
 @router.post(
     "/logout",
     status_code=status.HTTP_200_OK,
@@ -548,12 +621,13 @@ async def refresh_token_endpoint(
     description="Revoke the current refresh token."
 )
 async def logout(
-    token_data: TokenRefresh,
-    current_user: Annotated[User, Depends(get_current_user)],
+    token_data: Optional[LogoutRequest] = None,
+    current_user: Optional[User] = Depends(get_current_user_optional),
     session: AsyncSession = Depends(get_session)
 ) -> dict:
     """Logout and revoke refresh token."""
-    await revoke_refresh_token(session, token_data.refresh_token)
+    if token_data and token_data.refresh_token:
+        await revoke_refresh_token(session, token_data.refresh_token)
     
     return {"message": "Successfully logged out"}
 
@@ -593,3 +667,107 @@ async def verify_token(
         "email": current_user.email,
         "role": current_user.role
     }
+
+
+# ============================================================================
+# Admin User Management Endpoints
+# ============================================================================
+
+class UserListItem(BaseModel):
+    """User item for list responses."""
+    id: str
+    email: str
+    full_name: str
+    role: str
+    department: Optional[str] = None
+    is_active: bool
+    created_at: Optional[str] = None
+    last_login: Optional[str] = None
+
+
+class UserUpdateRequest(BaseModel):
+    """Request to update a user."""
+    role: Optional[str] = None
+    department: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+def require_admin(current_user: User) -> User:
+    """Verify the current user has admin role."""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user
+
+
+@router.get(
+    "/users",
+    response_model=list[UserListItem],
+    summary="List all users (admin only)",
+    description="Get all registered users. Requires admin role."
+)
+async def list_users(
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: AsyncSession = Depends(get_session),
+) -> list[UserListItem]:
+    """List all users (admin only)."""
+    require_admin(current_user)
+    result = await session.execute(
+        select(UserDB).order_by(UserDB.created_at.desc())
+    )
+    users = result.scalars().all()
+    return [
+        UserListItem(
+            id=u.user_id,
+            email=u.email,
+            full_name=u.full_name,
+            role=u.role,
+            department=u.department,
+            is_active=u.is_active,
+            created_at=u.created_at.isoformat() if u.created_at else None,
+            last_login=u.last_login.isoformat() if u.last_login else None,
+        )
+        for u in users
+    ]
+
+
+@router.put(
+    "/users/{user_id}",
+    response_model=UserListItem,
+    summary="Update a user (admin only)",
+    description="Update user role, department, or active status. Requires admin role."
+)
+async def update_user(
+    user_id: str,
+    updates: UserUpdateRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: AsyncSession = Depends(get_session),
+) -> UserListItem:
+    """Update a user (admin only)."""
+    require_admin(current_user)
+    user_db = await get_user_by_id(session, user_id)
+    if not user_db:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if updates.role is not None:
+        user_db.role = updates.role
+    if updates.department is not None:
+        user_db.department = updates.department
+    if updates.is_active is not None:
+        user_db.is_active = updates.is_active
+
+    await session.commit()
+    await session.refresh(user_db)
+
+    return UserListItem(
+        id=user_db.user_id,
+        email=user_db.email,
+        full_name=user_db.full_name,
+        role=user_db.role,
+        department=user_db.department,
+        is_active=user_db.is_active,
+        created_at=user_db.created_at.isoformat() if user_db.created_at else None,
+        last_login=user_db.last_login.isoformat() if user_db.last_login else None,
+    )

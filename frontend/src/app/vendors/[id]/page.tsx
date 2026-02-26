@@ -12,6 +12,7 @@ import {
   useVendorRiskEvents,
   useVendorRiskHistory,
   useVendorPerformanceMetrics,
+  useVendorPurchaseOrders,
   useDeactivateVendor,
   useActivateVendor,
 } from '@/lib/api/vendors';
@@ -31,6 +32,7 @@ import {
   MailIcon,
   PhoneIcon,
   MapPinIcon,
+  PackageIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -46,6 +48,7 @@ export default function VendorDetailPage() {
   const { data: riskEvents } = useVendorRiskEvents(vendorId);
   const { data: riskHistory } = useVendorRiskHistory(vendorId);
   const { data: performance } = useVendorPerformanceMetrics(vendorId);
+  const { data: purchaseOrders } = useVendorPurchaseOrders(vendorId);
 
   const deactivateMutation = useDeactivateVendor();
   const activateMutation = useActivateVendor();
@@ -417,7 +420,7 @@ export default function VendorDetailPage() {
         )}
 
         {/* Invoice History */}
-        {invoiceHistory && invoiceHistory.data.length > 0 && (
+        {invoiceHistory && invoiceHistory.data && invoiceHistory.data.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Invoice History</CardTitle>
@@ -468,6 +471,65 @@ export default function VendorDetailPage() {
                         </td>
                         <td className="px-4 py-3 text-sm text-center">
                           {invoice.days_to_pay !== undefined ? `${invoice.days_to_pay} days` : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Purchase Orders */}
+        {purchaseOrders && purchaseOrders.data && purchaseOrders.data.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PackageIcon className="h-5 w-5" />
+                Purchase Orders
+              </CardTitle>
+              <CardDescription>{purchaseOrders.total} purchase orders total</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium">PO #</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Order Date</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Delivery Date</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium">Amount</th>
+                      <th className="px-4 py-3 text-center text-sm font-medium">Items</th>
+                      <th className="px-4 py-3 text-center text-sm font-medium">Matched Invoices</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {purchaseOrders.data.map((po) => (
+                      <tr
+                        key={po.id}
+                        className="hover:bg-muted/50 cursor-pointer"
+                        onClick={() => router.push(`/purchase-orders/${po.id}`)}
+                      >
+                        <td className="px-4 py-3 text-sm font-medium">{po.po_number}</td>
+                        <td className="px-4 py-3 text-sm">
+                          {po.order_date
+                            ? format(new Date(po.order_date), 'MMM d, yyyy')
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {po.expected_delivery_date
+                            ? format(new Date(po.expected_delivery_date), 'MMM d, yyyy')
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right">
+                          ${po.total_amount.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-center">{po.items_count}</td>
+                        <td className="px-4 py-3 text-sm text-center">{po.matched_invoices_count}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <Badge variant="outline">{po.status}</Badge>
                         </td>
                       </tr>
                     ))}

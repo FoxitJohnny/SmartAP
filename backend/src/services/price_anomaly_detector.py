@@ -6,6 +6,7 @@ Detects unusual pricing patterns and anomalies.
 
 from typing import List, Optional, Tuple
 from statistics import mean, stdev
+from decimal import Decimal
 
 from ..models import Invoice, InvoiceLineItem, PriceAnomalyInfo
 from ..db.repositories import InvoiceRepository
@@ -16,7 +17,7 @@ class PriceAnomalyDetector:
     
     # Thresholds
     STANDARD_DEVIATIONS_THRESHOLD = 2.0  # Price must be 2 std devs from mean
-    MIN_HISTORICAL_INVOICES = 3          # Need at least 3 invoices for comparison
+    MIN_HISTORICAL_INVOICES = 2          # Need at least 2 invoices for comparison
     SIGNIFICANT_AMOUNT_THRESHOLD = 1000.00  # Only flag if amount is significant
     
     # Price change thresholds
@@ -24,16 +25,30 @@ class PriceAnomalyDetector:
     MAJOR_INCREASE = 0.30   # 30% increase
     CRITICAL_INCREASE = 0.50  # 50% increase
     
-    def __init__(self, invoice_repo: InvoiceRepository):
+    def __init__(self, invoice_repo: InvoiceRepository, settings: dict | None = None):
         self.invoice_repo = invoice_repo
+        if settings:
+            self.STANDARD_DEVIATIONS_THRESHOLD = settings.get("price_std_dev_threshold", self.STANDARD_DEVIATIONS_THRESHOLD)
+            self.MIN_HISTORICAL_INVOICES = settings.get("price_min_historical_invoices", self.MIN_HISTORICAL_INVOICES)
+            self.SIGNIFICANT_AMOUNT_THRESHOLD = settings.get("price_significant_amount", self.SIGNIFICANT_AMOUNT_THRESHOLD)
+            self.MINOR_INCREASE = settings.get("price_minor_increase", self.MINOR_INCREASE)
+            self.MAJOR_INCREASE = settings.get("price_major_increase", self.MAJOR_INCREASE)
+            self.CRITICAL_INCREASE = settings.get("price_critical_increase", self.CRITICAL_INCREASE)
     
     async def detect_price_anomalies(
         self,
         invoice: Invoice,
-        vendor_name: str
+        vendor_name: str,
+        exclude_document_id: Optional[str] = None,
     ) -> Tuple[float, Optional[PriceAnomalyInfo]]:
         """
         Detect price anomalies by comparing to historical invoices.
+        
+        Args:
+            invoice: Invoice being assessed
+            vendor_name: Vendor name for historical lookup
+            exclude_document_id: If set, exclude this document from the
+                historical baseline so the invoice doesn't inflate its own stats
         
         Returns:
             Tuple of (risk_score, anomaly_info)
@@ -45,9 +60,19 @@ class PriceAnomalyDetector:
         )
         
         # Filter to only successful extractions
+        # Exclude the current invoice so it doesn't bias its own baseline
+        def _get_total(data: dict) -> float:
+            """Extract total from invoice_data, trying 'total' then 'total_amount'."""
+            raw = data.get("total", data.get("total_amount", 0))
+            try:
+                return float(raw)
+            except (TypeError, ValueError):
+                return 0.0
+
         valid_invoices = [
             inv for inv in historical_invoices
-            if inv.invoice_data and inv.invoice_data.get("total_amount", 0) > 0
+            if inv.invoice_data and _get_total(inv.invoice_data) > 0
+            and (not exclude_document_id or inv.document_id != exclude_document_id)
         ]
         
         # Need minimum historical data
@@ -55,10 +80,7 @@ class PriceAnomalyDetector:
             return 0.0, None
         
         # Extract historical amounts
-        historical_amounts = [
-            float(inv.invoice_data.get("total_amount", 0))
-            for inv in valid_invoices
-        ]
+        historical_amounts = [_get_total(inv.invoice_data) for inv in valid_invoices]
         
         # Calculate statistics
         avg_amount = mean(historical_amounts)
@@ -70,16 +92,24 @@ class PriceAnomalyDetector:
         
         # Calculate how many standard deviations away
         if std_dev > 0:
-            z_score = (invoice.total_amount - avg_amount) / std_dev
+            z_score = (float(invoice.total) - avg_amount) / std_dev
         else:
             z_score = 0.0
         
         # Check if this is an anomaly
+        # Primary: z-score based (reliable with larger samples)
         is_anomaly = abs(z_score) >= self.STANDARD_DEVIATIONS_THRESHOLD
         
-        if is_anomaly and invoice.total_amount >= self.SIGNIFICANT_AMOUNT_THRESHOLD:
+        # Fallback: percentage-based for small sample sizes where stdev is unreliable
+        current_total = float(invoice.total)
+        if not is_anomaly and avg_amount > 0 and len(historical_amounts) < 5:
+            pct_from_mean = abs(current_total - avg_amount) / avg_amount
+            if pct_from_mean >= self.MAJOR_INCREASE:
+                is_anomaly = True
+        
+        if is_anomaly and current_total >= self.SIGNIFICANT_AMOUNT_THRESHOLD:
             # Calculate percentage difference
-            pct_diff = (invoice.total_amount - avg_amount) / avg_amount
+            pct_diff = (current_total - avg_amount) / avg_amount
             
             # Determine severity
             if abs(pct_diff) >= self.CRITICAL_INCREASE:
@@ -92,13 +122,13 @@ class PriceAnomalyDetector:
                 risk_score = 0.20
             
             anomaly_info = PriceAnomalyInfo(
+                item_description="Invoice Total",
+                current_price=Decimal(str(invoice.total)),
+                historical_average=Decimal(str(avg_amount)),
+                historical_std_dev=Decimal(str(std_dev)),
+                price_z_score=z_score,
                 is_anomaly=True,
-                current_amount=invoice.total_amount,
-                average_amount=avg_amount,
-                std_deviation=std_dev,
-                z_score=z_score,
-                percentage_difference=pct_diff,
-                historical_invoice_count=len(historical_amounts),
+                deviation_percentage=pct_diff * 100,
             )
             
             return risk_score, anomaly_info

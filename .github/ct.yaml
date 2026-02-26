@@ -1,0 +1,36 @@
+# Chart Testing Configuration
+# https://github.com/helm/chart-testing
+
+# Remote name (default: origin)
+remote: origin
+
+# Target branch (default: main)
+target-branch: main
+
+# Chart directories (relative paths)
+chart-dirs:
+  - helm
+
+# Excluded charts (chart names)
+excluded-charts: []
+
+# Validate chart version increment
+check-version-increment: true
+
+# Validate maintainers in Chart.yaml
+validate-maintainers: false
+
+# Validate chart schema
+validate-chart-schema: true
+
+# Validate YAML files
+validate-yaml: true
+
+# Additional helm lint args
+helm-extra-args: --timeout 600s
+
+# Helm repo to use for dependencies
+helm-repo-extra-args: []
+
+# Debug mode
+debug: false

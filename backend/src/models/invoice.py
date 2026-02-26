@@ -5,7 +5,7 @@ Pydantic models for invoice data extraction and processing.
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Any
 from datetime import date, datetime
 from enum import Enum
 from decimal import Decimal
@@ -16,8 +16,10 @@ class InvoiceStatus(str, Enum):
     INGESTED = "ingested"
     EXTRACTED = "extracted"
     MATCHED = "matched"
+    PENDING_APPROVAL = "pending_approval"
     RISK_REVIEW = "risk_review"
     APPROVED = "approved"
+    REJECTED = "rejected"
     READY_FOR_PAYMENT = "ready_for_payment"
     ARCHIVED = "archived"
     FAILED = "failed"
@@ -49,6 +51,7 @@ class ExtractionConfidence(BaseModel):
 
 class InvoiceLineItem(BaseModel):
     """A single line item on an invoice."""
+    line_number: Optional[int] = Field(default=None, description="Line item number")
     description: str = Field(..., description="Item description")
     quantity: Optional[float] = Field(default=None, description="Quantity ordered")
     unit_price: Optional[Decimal] = Field(default=None, description="Price per unit")
@@ -64,6 +67,9 @@ class Invoice(BaseModel):
     vendor_name: str = Field(..., description="Vendor/supplier name")
     vendor_address: Optional[str] = Field(default=None, description="Vendor address")
     vendor_tax_id: Optional[str] = Field(default=None, description="Vendor tax ID")
+    
+    # Document identifier (optional, used to exclude self from duplicate detection)
+    document_id: Optional[str] = Field(default=None, description="Document ID for self-exclusion in duplicate detection")
     
     # Dates
     invoice_date: Optional[date] = Field(default=None, description="Invoice date")
@@ -92,6 +98,7 @@ class InvoiceExtractionResult(BaseModel):
     document_id: str = Field(..., description="Unique document identifier")
     file_name: str = Field(..., description="Original file name")
     file_hash: str = Field(..., description="Document hash for deduplication")
+    file_path: Optional[str] = Field(default=None, description="Path to retrieve the PDF file")
     
     # Status
     status: InvoiceStatus = Field(default=InvoiceStatus.EXTRACTED)
@@ -111,6 +118,9 @@ class InvoiceExtractionResult(BaseModel):
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Risk assessment (optional, included when available)
+    risk_assessment: Optional[Any] = Field(default=None, description="Full risk assessment data")
     
     # Errors
     errors: list[str] = Field(default_factory=list, description="Extraction errors")

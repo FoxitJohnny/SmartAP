@@ -133,27 +133,39 @@ class MatchingService:
     @staticmethod
     def match_line_items(
         invoice_items: List[InvoiceLineItem],
-        po_items: List[POLineItem]
+        po_items: List[POLineItem],
+        *,
+        amount_tolerance: float = 0.10,
+        min_match_score: float = 0.60,
+        matched_score_threshold: float = 0.70,
     ) -> Tuple[List[LineItemMatch], float]:
         """
         Match invoice line items to PO line items.
         
         Returns:
             Tuple of (matched_items, overall_score)
+            If no line items on either side, returns 1.0 (neutral score)
         """
+        # Handle empty line items case - don't penalize the match
+        if not invoice_items or not po_items:
+            return [], 1.0  # Neutral score when no line items to compare
+        
         matches: List[LineItemMatch] = []
-        total_invoice_amount = sum(item.amount for item in invoice_items)
+        total_invoice_amount = float(sum(item.amount or 0 for item in invoice_items))
         matched_amount = 0.0
         
         # Try to match each invoice item to a PO item
-        for inv_item in invoice_items:
+        for inv_idx, inv_item in enumerate(invoice_items):
             best_match = None
             best_score = 0.0
             best_po_item = None
             
+            # Use index+1 if line_number is None
+            inv_line_num = inv_item.line_number if inv_item.line_number is not None else (inv_idx + 1)
+            
             for po_item in po_items:
-                # Skip if already fully matched
-                if any(m.po_line_number == po_item.line_number and m.quantity_matched >= po_item.quantity for m in matches):
+                # Skip if already matched to this PO line
+                if any(m.po_line_number == po_item.line_number for m in matches):
                     continue
                 
                 # Calculate description similarity
@@ -164,9 +176,9 @@ class MatchingService:
                 
                 # Calculate amount similarity
                 amount_score = MatchingService.calculate_amount_match_score(
-                    inv_item.amount,
-                    po_item.amount,
-                    tolerance=0.10  # 10% tolerance for line items
+                    float(inv_item.amount or 0),
+                    float(po_item.amount or 0),
+                    tolerance=amount_tolerance
                 )
                 
                 # Calculate quantity match
@@ -179,18 +191,16 @@ class MatchingService:
                     best_score = item_score
                     best_po_item = po_item
                     best_match = LineItemMatch(
-                        invoice_line_number=inv_item.line_number,
+                        invoice_line_number=inv_line_num,
                         po_line_number=po_item.line_number,
-                        description_match_score=desc_score,
-                        quantity_matched=min(inv_item.quantity, po_item.quantity),
-                        quantity_expected=po_item.quantity,
-                        amount_match_score=amount_score,
-                        matched=item_score >= 0.70,
+                        match_score=item_score,
+                        description_similarity=desc_score,
+                        matched=item_score >= matched_score_threshold,
                     )
             
-            if best_match and best_score >= 0.60:
+            if best_match and best_score >= min_match_score:
                 matches.append(best_match)
-                matched_amount += inv_item.amount
+                matched_amount += float(inv_item.amount or 0)
         
         # Calculate overall line items score
         if total_invoice_amount > 0:
@@ -200,10 +210,7 @@ class MatchingService:
         
         # Average match quality
         if matches:
-            avg_quality = sum(
-                (m.description_match_score + m.amount_match_score) / 2
-                for m in matches
-            ) / len(matches)
+            avg_quality = sum(m.description_similarity for m in matches) / len(matches)
         else:
             avg_quality = 0.0
         
@@ -217,7 +224,12 @@ class MatchingService:
         vendor_score: float,
         amount_score: float,
         date_score: float,
-        line_items_score: float
+        line_items_score: float,
+        *,
+        vendor_weight: float = 0.30,
+        amount_weight: float = 0.30,
+        date_weight: float = 0.10,
+        line_items_weight: float = 0.30,
     ) -> float:
         """
         Calculate weighted overall match score.
@@ -228,12 +240,18 @@ class MatchingService:
             - Line Items: 30%
             - Date: 10%
         """
+        weight_sum = vendor_weight + amount_weight + date_weight + line_items_weight
+        if weight_sum <= 0:
+            # Safe fallback to previous defaults
+            vendor_weight, amount_weight, line_items_weight, date_weight = 0.30, 0.30, 0.30, 0.10
+            weight_sum = 1.0
+
         return (
-            vendor_score * 0.30 +
-            amount_score * 0.30 +
-            line_items_score * 0.30 +
-            date_score * 0.10
-        )
+            vendor_score * vendor_weight +
+            amount_score * amount_weight +
+            line_items_score * line_items_weight +
+            date_score * date_weight
+        ) / weight_sum
     
     @staticmethod
     def determine_match_quality(score: float) -> str:

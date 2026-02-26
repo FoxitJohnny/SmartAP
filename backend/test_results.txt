@@ -1,0 +1,105 @@
+[1m============================= test session starts =============================[0m
+platform win32 -- Python 3.13.9, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\source\repos\SmartAP\backend
+configfile: pytest.ini
+plugins: anyio-4.12.1, Faker-40.1.0, langsmith-0.6.1, asyncio-1.3.0, cov-7.0.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 32 items
+
+tests\test_integration.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                    [ 34%][0m
+tests\test_api_e2e.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m                                      [ 75%][0m
+tests\test_performance.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m                                       [100%][0m
+
+[33m============================== warnings summary ===============================[0m
+tests/test_api_e2e.py::TestAPIEndToEnd::test_health_check
+  tests\test_api_e2e.py:28: PytestWarning: The test <Function test_health_check> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_health_check(self, test_client: TestClient):
+
+tests/test_performance.py::TestConcurrentLoad::test_concurrent_matching_requests
+  C:\source\repos\SmartAP\backend\src\db\repositories.py:628: SAWarning: Usage of the 'Session.add()' operation is not currently supported within the execution stage of the flush process. Results may not be consistent.  Consider using alternative event listeners or connection-level operations instead.
+    self.session.add(matching_db)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.13.9-final-0 _______________
+
+Name                                     Stmts   Miss  Cover   Missing
+----------------------------------------------------------------------
+src\__init__.py                              1      0   100%
+src\agents\__init__.py                       4      0   100%
+src\agents\extraction_agent.py               4      0   100%
+src\agents\po_matching_agent.py            139     32    77%   92-93, 95-96, 106, 124-126, 130, 176, 226, 352, 356, 371, 376, 418, 451-456, 458-463, 469-479, 487
+src\agents\risk_detection_agent.py         107     13    88%   92, 94, 113, 244, 248, 250, 275-276, 285, 289, 301, 310, 314
+src\api\__init__.py                         39     12    69%   29-31, 38-40, 47-49, 56-58
+src\api\approval_routes.py                 261    141    46%   176-229, 256-258, 296-304, 348-444, 456-466, 480-487, 499-527, 541, 561-562, 582-583, 601-692, 707-727, 773-894, 909-913
+src\api\dashboard_routes.py                474    367    23%   54-55, 76-77, 97, 127-171, 177-183, 189-197, 203-211, 217-231, 237-251, 267-307, 313-319, 325, 331-339, 345-354, 360-369, 375-391, 403-421, 427-436, 447-469, 490-525, 531-542, 548, 554-562, 568-577, 583-592, 598, 604-610, 619-627, 651-694, 700-708, 723-730, 741-747, 753, 759, 770-814, 821-847, 853-874, 880-904, 910-931, 937-957, 963-987, 993-1019, 1029, 1035
+src\api\erp_routes.py                      392    236    40%   186-229, 246-274, 286-296, 307-317, 329-349, 360-373, 384-428, 442-474, 491-563, 578-646, 665-719, 734-776, 796-809, 820-828, 842-851, 863-904, 916-935, 946-959, 972-991, 1005-1024
+src\api\esign_routes.py                    103     76    26%   26-27, 53-138, 155-169, 189-212, 232-253, 279-341, 352-354, 397-399
+src\api\pagination.py                       27     27     0%   7-71
+src\api\routes.py                          153     68    56%   57, 70, 93-100, 118-137, 174, 181, 197, 203-214, 239, 246, 266-276, 306-345, 368-406, 430-448
+src\api\routes_simple.py                   117     81    31%   41-62, 81, 99, 117, 135, 153, 182, 199-273, 286-292, 305-310, 324-331, 344-363
+src\auth.py                                215    126    41%   66-74, 123-126, 131-134, 139-152, 157-164, 169-176, 181-188, 193-203, 212, 217, 222-229, 235-246, 251-255, 263-293, 309-314, 334-352, 374-415, 435-474, 493-536, 556-558, 571, 590
+src\cache\__init__.py                        3      0   100%
+src\cache\cache_service.py                 269    193    28%   43, 50-54, 58-70, 74-86, 90-94, 98-104, 108-109, 113-116, 120-125, 130-131, 174-178, 187-211, 215-218, 231-243, 256-268, 289-302, 315-326, 338-349, 358-370, 378, 397-401, 407, 440-500, 524-551, 597-608
+src\cache\redis_cache.py                   136    107    21%   28-30, 39-64, 68-71, 84, 98-102, 115-129, 150-163, 176-186, 198-215, 219, 223, 227, 231, 240-261, 268-271, 287-291, 313-345
+src\config.py                               85      0   100%
+src\db\__init__.py                           5      0   100%
+src\db\database.py                          47     19    60%   30, 66, 70, 75, 111, 123-131, 145-146, 156-160
+src\db\models.py                           197      0   100%
+src\db\repositories.py                     319    176    45%   59-65, 68, 71, 74, 78, 115, 158, 195-204, 206-209, 217-245, 257-277, 281-282, 286-292, 319-353, 357-377, 384-406, 437-445, 458-482, 514-540, 560-575, 579-587, 624-630, 638, 652, 665-672, 684-696, 732, 740, 751, 764-785, 796-803, 810-841
+src\db\seed.py                              16     16     0%   9-34
+src\db\seed_data.py                         25     15    40%   533-536, 541-544, 549-558
+src\integrations\__init__.py                 0      0   100%
+src\integrations\erp\__init__.py             6      0   100%
+src\integrations\erp\base.py               132     67    49%   61-70, 74, 105-115, 119, 152-163, 167, 198-206, 210, 242-245, 253, 266, 276, 294, 314, 330, 343, 353, 363, 367-368, 377, 384, 388-394, 397
+src\integrations\erp\netsuite.py           210    180    14%   66-83, 103-125, 139-158, 185-211, 222-231, 240-256, 273-323, 337-355, 385-436, 450-460, 483-527, 539-575, 584-610, 619-644, 648-660, 664-665
+src\integrations\erp\quickbooks.py         241    208    14%   53-64, 68, 76-89, 93-113, 128-172, 185-238, 246-305, 316-357, 364-383, 387-404, 412-427, 431-457, 461-466, 470-486, 490, 498-500, 526-540, 560-561
+src\integrations\erp\sap.py                228    203    11%   44-55, 62, 66-92, 96-114, 126-176, 189-245, 253-305, 313-355, 359-381, 385-405, 415-444, 448, 455, 459-462, 487-499, 518-527
+src\integrations\erp\xero.py               249    216    13%   54-65, 69, 73-84, 88-112, 122-167, 176-229, 237-284, 288-329, 333-355, 359-379, 389-402, 406-432, 436-440, 444-460, 464, 473-479, 503-516, 536-537
+src\integrations\foxit\esign.py            129     98    24%   69-84, 103-140, 167-214, 229-262, 279-301, 318-340, 357-376, 393-415, 438-488, 492-493
+src\logging_config.py                       24     24     0%   7-64
+src\main.py                                112     28    75%   41-42, 69-77, 83-84, 94-95, 181-182, 189-190, 231-232, 238, 252, 267-273, 289-292
+src\middleware\__init__.py                   3      0   100%
+src\middleware\logging_middleware.py        96     23    76%   57, 96-107, 141-142, 150, 155, 161, 166, 181, 202-225
+src\middleware\rate_limit.py                96     38    60%   65-66, 77-79, 83-86, 90-131, 157, 166
+src\models\__init__.py                       6      0   100%
+src\models\approval.py                     201     14    93%   102, 139, 195, 200, 205-208, 253, 291, 359, 364, 369, 399
+src\models\erp.py                          128      5    96%   103, 156, 203, 246, 291
+src\models\esign.py                         92      4    96%   84, 127, 163, 195
+src\models\invoice.py                       66      0   100%
+src\models\matching.py                      84      6    93%   134, 139, 148-151
+src\models\purchase_order.py                54      5    91%   88, 96, 104-106
+src\models\risk.py                         109      6    94%   169, 179, 188-191
+src\models\vendor.py                        91      3    97%   147, 152, 157
+src\orchestration\__init__.py                3      0   100%
+src\orchestration\orchestrator.py           74     14    81%   122, 129-133, 139, 207-209, 239, 244, 248-249
+src\orchestration\workflow_graph.py         34      1    97%   53
+src\orchestration\workflow_nodes.py        214     51    76%   130-132, 136, 139, 212-221, 289, 324-329, 347-351, 361-365, 389-392, 401-412, 416-418, 435-446
+src\orchestration\workflow_state.py         51      0   100%
+src\plugins\__init__.py                      3      3     0%   8-25
+src\plugins\base.py                         89     89     0%   7-316
+src\plugins\registry.py                     91     91     0%   7-232
+src\services\__init__.py                     8      3    62%   8-10
+src\services\archival_service.py           165    141    15%   76-85, 119-238, 267-307, 319-362, 371-404, 421-485, 498-525, 537-544, 556, 575
+src\services\discrepancy_detector.py        86     26    70%   39-44, 71, 77-80, 106-109, 120-122, 151-154, 165-169, 180-181, 201-202, 222
+src\services\duplicate_detector.py          82     14    83%   44, 86, 101, 112-113, 134, 139, 154, 174-175, 186-191
+src\services\erp_sync_service.py           252    246     2%   15-626
+src\services\esign_service.py              154    117    24%   67-73, 93-99, 112-118, 145-218, 230-273, 290-318, 331-357, 370-396, 408-431, 435, 444, 454, 463, 471, 490-497, 510
+src\services\extraction_agent.py            87     43    51%   112, 150, 156, 173-191, 224-284, 294-308
+src\services\matching_service.py            93     50    46%   56-61, 76, 88, 118-131, 149-213, 241-248
+src\services\ocr_service.py                164     89    46%   80-81, 87-88, 113-136, 160-222, 230-270, 329-345, 350, 355-360, 366-369
+src\services\pdf_service.py                255    225    12%   33-34, 63-68, 94-142, 167-217, 221-296, 300, 334-375, 400-453, 472-506, 534-611, 629-666, 678-699, 716-746, 765-793
+src\services\price_anomaly_detector.py      58     32    45%   59-107, 120-155, 175
+src\services\vendor_risk_analyzer.py       102     41    60%   50, 68-73, 84-89, 145-153, 158, 161, 177, 181, 188-201, 206, 209, 216-223
+src\utils\__init__.py                        5      0   100%
+src\utils\circuit_breaker.py               145     98    32%   76-89, 94-95, 100-101, 106, 111, 116, 120-134, 138-155, 159-168, 172-181, 185-199, 203-208, 212-219, 234-235, 239-244, 248, 265-275, 280-291, 296-306
+src\utils\errors.py                         61     28    54%   40-45, 49, 60, 80-88, 100-111, 122, 144-155, 168-179, 190-200, 211-222
+src\utils\monitoring.py                    242    151    38%   45, 50, 123, 144-151, 169-206, 220-221, 236-240, 257-268, 280-286, 305, 309-325, 333-351, 359-377, 384-389, 397-418, 426-431, 438-458, 465-493, 504-550, 562
+src\utils\query_optimizer.py               257    138    46%   78, 154-156, 174, 178, 194-198, 209-213, 217-218, 222-225, 229-234, 239-241, 284-291, 303-323, 334, 338-373, 377, 386-387, 413-414, 430-431, 439-452, 456-463, 522, 529, 548-564, 577-578, 586-598, 609, 627-644, 665-689, 728, 738, 746
+src\utils\retry.py                          76     51    33%   40-42, 53-61, 80-126, 154-192
+----------------------------------------------------------------------
+TOTAL                                     8346   4575    45%
+Coverage HTML written to dir htmlcov
+Coverage XML written to file coverage.xml
+[32mRequired test coverage of 30% reached. Total coverage: 45.18%
+[0m[33m======================= [32m32 passed[0m, [33m[1m2 warnings[0m[33m in 29.46s[0m[33m =======================[0m

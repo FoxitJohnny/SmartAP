@@ -45,7 +45,15 @@ export function useLogin() {
   return useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
-      login(data.user, data.access_token);
+      // Map backend user (full_name) to frontend User (name)
+      const user = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.full_name,
+        role: data.user.role as any,
+        department: data.user.department,
+      };
+      login(user, data.access_token);
       // Store refresh token
       if (data.refresh_token) {
         localStorage.setItem('refresh_token', data.refresh_token);
@@ -62,29 +70,26 @@ export function useRegister() {
   return useMutation({
     mutationFn: authApi.register,
     onSuccess: (data) => {
-      login(data.user, data.access_token);
-      if (data.refresh_token) {
-        localStorage.setItem('refresh_token', data.refresh_token);
-      }
-      router.push('/dashboard');
+      // After registration, redirect to login
+      router.push('/login');
     },
   });
 }
 
 export function useLogout() {
-  const router = useRouter();
   const { logout } = useAuthStore();
 
   return useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
       logout();
-      router.push('/login');
+      // Use hard navigation to fully reset all in-memory state
+      window.location.href = '/login';
     },
     onError: () => {
       // Even if logout API fails, clear local state
       logout();
-      router.push('/login');
+      window.location.href = '/login';
     },
   });
 }

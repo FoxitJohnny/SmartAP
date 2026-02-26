@@ -337,7 +337,7 @@ export default function ApprovalsPage() {
                       <tr
                         key={invoice.id}
                         className="border-b hover:bg-muted/50 cursor-pointer"
-                        onClick={() => router.push(`/invoices/${invoice.id}`)}
+                        onClick={() => router.push(`/approvals/${invoice.id}`)}
                       >
                         <td className="p-4" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
@@ -389,7 +389,7 @@ export default function ApprovalsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => router.push(`/invoices/${invoice.id}`)}
+                            onClick={() => router.push(`/approvals/${invoice.id}`)}
                           >
                             Review
                           </Button>

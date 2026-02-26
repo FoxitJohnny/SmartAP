@@ -132,53 +132,53 @@ export default function AnalyticsPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <MetricCard
             title="Total Invoices"
-            value={metrics?.totalInvoices.value ?? 0}
-            change={metrics?.totalInvoices.change}
-            trend={metrics?.totalInvoices.trend}
+            value={metrics?.totalInvoices?.value ?? 0}
+            change={metrics?.totalInvoices?.change}
+            trend={metrics?.totalInvoices?.trend}
             icon={FileTextIcon}
             format="number"
             description="from last period"
           />
           <MetricCard
             title="STP Rate"
-            value={metrics?.stpRate.value ?? 0}
-            change={metrics?.stpRate.change}
-            trend={metrics?.stpRate.trend}
+            value={metrics?.stpRate?.value ?? 0}
+            change={metrics?.stpRate?.change}
+            trend={metrics?.stpRate?.trend}
             icon={TrendingUpIcon}
             format="percentage"
             description="from last period"
           />
           <MetricCard
             title="Avg Processing Time"
-            value={metrics?.avgProcessingTime.value ?? '0'}
-            change={metrics?.avgProcessingTime.change}
-            trend={metrics?.avgProcessingTime.trend}
+            value={metrics?.avgProcessingTime?.value ?? '0'}
+            change={metrics?.avgProcessingTime?.change}
+            trend={metrics?.avgProcessingTime?.trend}
             icon={ClockIcon}
             description="from last period"
           />
           <MetricCard
             title="Pending Approvals"
-            value={metrics?.pendingApprovals.value ?? 0}
-            change={metrics?.pendingApprovals.change}
-            trend={metrics?.pendingApprovals.trend}
+            value={metrics?.pendingApprovals?.value ?? 0}
+            change={metrics?.pendingApprovals?.change}
+            trend={metrics?.pendingApprovals?.trend}
             icon={CheckCircleIcon}
             format="number"
             description="from last period"
           />
           <MetricCard
             title="Risk Flags"
-            value={metrics?.riskFlags.value ?? 0}
-            change={metrics?.riskFlags.change}
-            trend={metrics?.riskFlags.trend}
+            value={metrics?.riskFlags?.value ?? 0}
+            change={metrics?.riskFlags?.change}
+            trend={metrics?.riskFlags?.trend}
             icon={AlertTriangleIcon}
             format="number"
             description="from last period"
           />
           <MetricCard
             title="Total Value"
-            value={metrics?.totalValue.value ?? 0}
-            change={metrics?.totalValue.change}
-            trend={metrics?.totalValue.trend}
+            value={metrics?.totalValue?.value ?? 0}
+            change={metrics?.totalValue?.change}
+            trend={metrics?.totalValue?.trend}
             icon={DollarSignIcon}
             format="currency"
             description="from last period"
@@ -189,15 +189,15 @@ export default function AnalyticsPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left Column - Charts */}
           <div className="space-y-6">
-            {invoiceVolume && <InvoiceVolumeChart data={invoiceVolume} />}
-            {statusDist && <StatusDistributionChart data={statusDist} />}
-            {processingTime && <ProcessingTimeChart data={processingTime} />}
+            {Array.isArray(invoiceVolume) && invoiceVolume.length > 0 && <InvoiceVolumeChart data={invoiceVolume} />}
+            {Array.isArray(statusDist) && statusDist.length > 0 && <StatusDistributionChart data={statusDist} />}
+            {Array.isArray(processingTime) && processingTime.length > 0 && <ProcessingTimeChart data={processingTime} />}
           </div>
 
           {/* Right Column - Charts + Activity */}
           <div className="space-y-6">
-            {riskDist && <RiskDistributionChart data={riskDist} />}
-            {topVendors && <TopVendorsChart data={topVendors} />}
+            {Array.isArray(riskDist) && riskDist.length > 0 && <RiskDistributionChart data={riskDist} />}
+            {Array.isArray(topVendors) && topVendors.length > 0 && <TopVendorsChart data={topVendors} />}
 
             {/* Recent Activity Feed */}
             <Card>
@@ -248,7 +248,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Bottom Row - Full Width Chart */}
-        {stpRate && <STPRateChart data={stpRate} />}
+        {Array.isArray(stpRate) && stpRate.length > 0 && <STPRateChart data={stpRate} />}
       </div>
     </DashboardLayout>
   );
