@@ -1,4 +1,8 @@
 # SmartAP Phase 1 - Core Intake Engine Dependencies
+
+# Allow pre-release packages (required for agent-framework-azure-ai preview)
+--pre
+
 # FastAPI Backend
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
@@ -9,7 +13,7 @@ python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
 bcrypt==4.0.1  # Pin to avoid passlib compatibility issues
 
-# AI/Agent Framework (--pre flag required during preview)
+# AI/Agent Framework
 agent-framework-azure-ai
 openai>=1.50.0
 
