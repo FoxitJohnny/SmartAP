@@ -414,9 +414,7 @@ export default function InvoiceDetailPage() {
 
   const shouldShowApprovalReview =
     invoice?.status === 'RISK_REVIEW' ||
-    invoice?.status === 'PENDING_APPROVAL' ||
-    invoice?.status === 'pending_approval' ||
-    invoice?.status === 'risk_review';
+    invoice?.status === 'PENDING_APPROVAL';
 
   const getPDFUrl = () => {
     // Construct PDF URL from file path
