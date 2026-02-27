@@ -58,23 +58,23 @@ Your backend will be live at: `https://smartap-api.onrender.com`
 
 > **Note:** Render free tier spins down after 15 minutes of inactivity. First request after idle takes ~30–60 seconds. This is fine for demos.
 
-#### Seed the database
+#### Database seeding
 
-Render runs the Dockerfile which starts uvicorn, but you need to seed data once:
+The Dockerfile now auto-seeds demo data on every container start, so no manual action needed.
+
+If you ever need to force a re-seed (e.g., data got corrupted), call the admin API:
 
 ```bash
-# From the Render dashboard → Shell tab, or use the API
-python -m src.db.seed
+# Seed (skips if data exists)
+curl -X POST https://smartap-api.onrender.com/api/v1/admin/seed \
+  -H "X-Admin-Key: YOUR_SECRET_KEY"
+
+# Force re-seed (wipes and recreates all data)
+curl -X POST https://smartap-api.onrender.com/api/v1/admin/seed/force \
+  -H "X-Admin-Key: YOUR_SECRET_KEY"
 ```
 
-Alternatively, add a seed step to your Dockerfile before the CMD:
-
-```dockerfile
-# Add this line before CMD in backend/Dockerfile
-RUN python -m src.db.seed || true
-```
-
-> **Important:** Render free-tier uses ephemeral disk. The SQLite database resets on each deploy. For persistent demo data, run the seed on startup (see [Limitations](#limitations--notes)).
+Replace `YOUR_SECRET_KEY` with the `SECRET_KEY` value you set in environment variables.
 
 ### Step 2: Deploy Frontend to Vercel
 
@@ -227,14 +227,14 @@ Same as [Option A, Step 1](#step-1-deploy-backend-to-render).
 Render spins down free services after 15 minutes of inactivity. The first request wakes it up in ~30–60 seconds. **Tip for demos:** open the backend URL in a browser tab a minute before your demo starts to "warm it up."
 
 ### SQLite on ephemeral disk
-Render's free tier has ephemeral storage — the SQLite DB resets on every deploy. To keep demo data available, modify `backend/Dockerfile` to seed on startup:
+Render's free tier has ephemeral storage — the SQLite DB resets on every deploy/restart. The Dockerfile now handles this automatically by running `python -m src.db.seed` before starting the server. Demo data is re-created in ~5 seconds on each cold start.
 
-```dockerfile
-# Replace the CMD line with:
-CMD python -m src.db.seed && uvicorn src.main:app --host 0.0.0.0 --port 8000
+If you need to manually re-seed a running instance, use the admin API:
+
+```bash
+curl -X POST https://smartap-api.onrender.com/api/v1/admin/seed/force \
+  -H "X-Admin-Key: YOUR_SECRET_KEY"
 ```
-
-This seeds fresh demo data every time the container starts (~5 seconds).
 
 ### Vercel free-tier limits
 - Unlimited static/SSR pages

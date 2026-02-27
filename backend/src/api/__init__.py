@@ -59,6 +59,15 @@ except ImportError as e:
     logger.warning(f"Approval routes not available: {e}")
     approval_router = None
 
+# Admin routes
+try:
+    from .admin_routes import router as admin_router
+    HAS_ADMIN = True
+    logger.info("Admin routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"Admin routes not available: {e}")
+    admin_router = None
+
 # Use full router if available, otherwise fall back to simple
 router = full_router if HAS_FULL_ROUTES else routes_simple
 
@@ -73,8 +82,10 @@ __all__ = [
     "esign_router",
     "erp_router",
     "approval_router",
+    "admin_router",
     "HAS_FULL_ROUTES",
     "HAS_ESIGN",
     "HAS_ERP",
     "HAS_APPROVALS",
+    "HAS_ADMIN",
 ]

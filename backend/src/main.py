@@ -22,8 +22,10 @@ from .api import (
     processing_router,
     esign_router,
     erp_router,
+    admin_router,
     HAS_ESIGN,
     HAS_ERP,
+    HAS_ADMIN,
 )
 
 
@@ -206,6 +208,10 @@ def create_app() -> FastAPI:
     if HAS_ERP and erp_router:
         app.include_router(erp_router)
         print("[OK] ERP routes enabled")
+    
+    if HAS_ADMIN and admin_router:
+        app.include_router(admin_router)
+        print("[OK] Admin routes enabled")
     
     # Add global exception handlers
     _setup_exception_handlers(app)
