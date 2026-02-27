@@ -37,33 +37,21 @@ async def upload_invoice(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> JSONResponse:
     """Upload and process an invoice PDF with AI extraction."""
-    # Validate file type
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="Filename is required")
-    
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=400,
-            detail="Only PDF files are supported"
-        )
-    
-    # Validate file size
-    max_size = settings.max_file_size_mb * 1024 * 1024
-    content = await file.read()
-    
-    if len(content) > max_size:
-        raise HTTPException(
-            status_code=400,
-            detail=f"File size exceeds maximum allowed ({settings.max_file_size_mb}MB)"
-        )
-    
-    # Return placeholder response - actual extraction to be implemented
-    document_id = str(uuid.uuid4())
-    return JSONResponse({
-        "document_id": document_id,
-        "status": "uploaded",
-        "message": "Invoice uploaded successfully. Extraction pending."
-    })
+    # DEGRADED MODE: Full routes failed to load, so AI processing is unavailable.
+    # Return a clear error instead of silently returning a fake document_id.
+    logger.error(
+        "Upload attempted but full routes are NOT loaded. "
+        "AI extraction is unavailable. Check startup logs for import errors."
+    )
+    raise HTTPException(
+        status_code=503,
+        detail=(
+            "Invoice processing is temporarily unavailable. "
+            "The server is running in degraded mode because required AI dependencies "
+            "failed to load. Please check the server logs for details. "
+            "(Hint: ensure 'agent-framework-azure-ai' is installed with --pre flag)"
+        ),
+    )
 
 
 @router.get(
@@ -180,9 +168,11 @@ async def get_processing_status(document_id: str) -> JSONResponse:
 async def health_check() -> dict:
     """Health check endpoint for monitoring and load balancers."""
     return {
-        "status": "healthy",
+        "status": "degraded",
         "service": "smartap-api",
         "version": "0.1.0",
+        "routes_mode": "simple_stub",
+        "warning": "Full AI routes failed to load. Invoice processing is unavailable. Check server logs.",
     }
 
 

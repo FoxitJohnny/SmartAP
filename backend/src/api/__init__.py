@@ -7,6 +7,7 @@ Falls back to simple routes if imports fail.
 """
 
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +28,14 @@ HAS_APPROVALS = False
 try:
     from .routes import router as full_router
     HAS_FULL_ROUTES = True
+    print("[OK] Full API routes loaded successfully (AI extraction, matching, risk assessment enabled)")
     logger.info("Full API routes loaded successfully")
-except ImportError as e:
-    logger.warning(f"Full routes not available: {e}")
+except Exception as e:
+    print(f"[ERROR] *** FULL ROUTES FAILED TO LOAD — running in DEGRADED mode (stub routes only) ***")
+    print(f"[ERROR] Import error: {type(e).__name__}: {e}")
+    print(f"[ERROR] Traceback:\n{traceback.format_exc()}")
+    print(f"[ERROR] Invoice upload will NOT process with AI. Fix the import error above.")
+    logger.error(f"Full routes not available: {e}", exc_info=True)
     full_router = None
 
 # eSign routes
@@ -70,6 +76,10 @@ except ImportError as e:
 
 # Use full router if available, otherwise fall back to simple
 router = full_router if HAS_FULL_ROUTES else routes_simple
+
+if not HAS_FULL_ROUTES:
+    print("[WARN] *** Using STUB routes — invoice upload will NOT use AI processing ***")
+    print("[WARN] Check the import errors above and ensure all dependencies are installed (pip install -r requirements.txt --pre)")
 
 __all__ = [
     "router",
