@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,14 @@ import { toast } from 'sonner';
 import type { ProcessingEventLevel, ProcessingEventStatus } from '@/types';
 
 export default function ProcessingPage() {
+  return (
+    <Suspense>
+      <ProcessingPageContent />
+    </Suspense>
+  );
+}
+
+function ProcessingPageContent() {
   const searchParams = useSearchParams();
 
   const [entityType, setEntityType] = useState<string>(() => searchParams.get('entity_type') ?? 'invoice');
