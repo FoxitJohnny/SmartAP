@@ -748,7 +748,7 @@ export default function InvoiceDetailPage() {
                         ${parseFloat(String(item.unit_price || 0)).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
-                        ${parseFloat(String(item.line_total || item.amount || 0)).toFixed(2)}
+                        ${parseFloat(String(item.line_total || 0)).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
