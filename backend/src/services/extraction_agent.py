@@ -12,9 +12,9 @@ from decimal import Decimal
 from typing import Optional
 from pathlib import Path
 
-from agent_framework import ChatAgent
-from agent_framework.openai import OpenAIChatClient
 from openai import AsyncOpenAI
+
+from ..compat.chat_agent import ChatAgent
 
 from ..config import Settings
 from ..models import (
@@ -113,13 +113,9 @@ class InvoiceExtractionAgent:
                     api_key=self.settings.openai_api_key,
                 )
             
-            chat_client = OpenAIChatClient(
+            self._agent = ChatAgent(
                 async_client=client,
                 model_id=self.settings.model_id,
-            )
-            
-            self._agent = ChatAgent(
-                chat_client=chat_client,
                 name="InvoiceExtractor",
                 instructions=EXTRACTION_SYSTEM_PROMPT,
             )

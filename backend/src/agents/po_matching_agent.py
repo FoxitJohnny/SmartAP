@@ -10,9 +10,9 @@ import logging
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-from agent_framework import ChatAgent
-from agent_framework.openai import OpenAIChatClient
 from openai import AsyncOpenAI
+
+from ..compat.chat_agent import ChatAgent
 
 from ..config import get_settings
 from ..models import (
@@ -110,13 +110,9 @@ class POMatchingAgent:
                     api_key=self.settings.openai_api_key,
                 )
             
-            chat_client = OpenAIChatClient(
+            self._agent = ChatAgent(
                 async_client=client,
                 model_id=self.settings.model_id,
-            )
-            
-            self._agent = ChatAgent(
-                chat_client=chat_client,
                 name="POMatchingAgent",
                 instructions=MATCHING_SYSTEM_PROMPT,
             )
