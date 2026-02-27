@@ -187,10 +187,10 @@ export function InvoiceFieldOverlay({
                     {flag.severity}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    {Math.round(flag.confidence * 100)}% confidence
+                    {Math.round((flag.confidence ?? 0) * 100)}% confidence
                   </span>
                 </div>
-                <p className="font-medium">{flag.type}</p>
+                <p className="font-medium">{flag.flag_type}</p>
                 <p className="text-xs text-muted-foreground mt-1">{flag.description}</p>
               </div>
             ))}

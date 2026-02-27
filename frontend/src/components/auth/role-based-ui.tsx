@@ -98,6 +98,10 @@ export function getRoleDisplayName(role: UserRole): string {
     MANAGER: 'Manager',
     AUDITOR: 'Auditor',
     ADMIN: 'Administrator',
+    admin: 'Administrator',
+    finance_manager: 'Finance Manager',
+    accountant: 'Accountant',
+    viewer: 'Viewer',
   };
   return roleNames[role] || role;
 }
@@ -111,6 +115,10 @@ export function getRoleDescription(role: UserRole): string {
     MANAGER: 'Can approve, reject, and escalate invoices',
     AUDITOR: 'Can review invoices, flag issues, and require additional information',
     ADMIN: 'Full system access including user management and configuration',
+    admin: 'Full system access including user management and configuration',
+    finance_manager: 'Can approve, reject, and escalate invoices',
+    accountant: 'Can view invoices, add comments, and request changes',
+    viewer: 'Read-only access to invoices and reports',
   };
   return descriptions[role] || 'No description available';
 }
