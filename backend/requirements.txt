@@ -14,7 +14,7 @@ passlib[bcrypt]>=1.7.4
 bcrypt==4.0.1  # Pin to avoid passlib compatibility issues
 
 # AI/Agent Framework
-agent-framework-azure-ai
+agent-framework-azure-ai==1.0.0b260106
 openai>=1.50.0
 
 # Data Validation & Models
