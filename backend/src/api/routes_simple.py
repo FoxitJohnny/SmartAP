@@ -172,7 +172,54 @@ async def health_check() -> dict:
         "service": "smartap-api",
         "version": "0.1.0",
         "routes_mode": "simple_stub",
-        "warning": "Full AI routes failed to load. Invoice processing is unavailable. Check server logs.",
+        "warning": "Full AI routes failed to load. Invoice processing is unavailable. Check /api/v1/health/imports for details.",
+    }
+
+
+@router.get(
+    "/health/imports",
+    tags=["health"],
+    summary="Import diagnostics",
+    description="Test each critical dependency import individually to identify what's broken",
+)
+async def import_diagnostics() -> dict:
+    """Diagnose exactly which imports are failing."""
+    from . import ROUTES_IMPORT_ERROR
+
+    results = {}
+
+    # Test each critical import individually
+    tests = [
+        ("agent_framework", "from agent_framework import ChatAgent"),
+        ("agent_framework.openai", "from agent_framework.openai import OpenAIChatClient"),
+        ("openai", "import openai"),
+        ("langgraph", "from langgraph.graph import StateGraph, END"),
+        ("langchain_core", "import langchain_core"),
+        ("redis", "import redis.asyncio"),
+        ("fuzzywuzzy", "from fuzzywuzzy import fuzz"),
+        ("aiofiles", "import aiofiles"),
+        ("pypdf", "import pypdf"),
+        ("httpx", "import httpx"),
+        ("sqlalchemy", "import sqlalchemy"),
+        ("asyncpg", "import asyncpg"),
+        ("reportlab", "import reportlab"),
+    ]
+
+    for name, stmt in tests:
+        try:
+            exec(stmt)  # noqa: S102
+            results[name] = {"status": "ok"}
+        except Exception as exc:
+            results[name] = {"status": "FAILED", "error": f"{type(exc).__name__}: {exc}"}
+
+    failed = [k for k, v in results.items() if v["status"] == "FAILED"]
+
+    return {
+        "routes_mode": "simple_stub",
+        "routes_import_error": ROUTES_IMPORT_ERROR,
+        "dependency_tests": results,
+        "failed_imports": failed,
+        "summary": f"{len(failed)} of {len(tests)} imports failed" if failed else "All imports OK (issue may be in route wiring)",
     }
 
 

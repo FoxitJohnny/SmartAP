@@ -23,6 +23,7 @@ HAS_FULL_ROUTES = False
 HAS_ESIGN = False
 HAS_ERP = False
 HAS_APPROVALS = False
+ROUTES_IMPORT_ERROR = None  # Stores the error if full routes fail to load
 
 # Full routes with agent integration
 try:
@@ -31,6 +32,7 @@ try:
     print("[OK] Full API routes loaded successfully (AI extraction, matching, risk assessment enabled)")
     logger.info("Full API routes loaded successfully")
 except Exception as e:
+    ROUTES_IMPORT_ERROR = f"{type(e).__name__}: {e}\n\n{traceback.format_exc()}"
     print(f"[ERROR] *** FULL ROUTES FAILED TO LOAD — running in DEGRADED mode (stub routes only) ***")
     print(f"[ERROR] Import error: {type(e).__name__}: {e}")
     print(f"[ERROR] Traceback:\n{traceback.format_exc()}")
@@ -98,4 +100,5 @@ __all__ = [
     "HAS_ERP",
     "HAS_APPROVALS",
     "HAS_ADMIN",
+    "ROUTES_IMPORT_ERROR",
 ]
