@@ -67,6 +67,10 @@ yarn-error.log*
 .next/
 out/
 
+# Cloudflare
+.open-next/
+.wrangler/
+
 # Build outputs
 dist/
 build/
