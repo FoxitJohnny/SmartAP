@@ -1,0 +1,41 @@
+{
+  "invoice_number": "INV-2025-2302",
+  "po_number": null,
+  "vendor": {
+    "name": "TechGear Solutions",
+    "address": "456 Tech Park Dr, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-13",
+  "due_date": "2026-03-15",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Wireless Keyboard",
+      "sku": "KEY-WL",
+      "quantity": 10,
+      "unit_price": 89.0,
+      "total": 890.0
+    },
+    {
+      "description": "Mouse Pad - XL",
+      "sku": "PAD-XL",
+      "quantity": 10,
+      "unit_price": 19.0,
+      "total": 190.0
+    }
+  ],
+  "subtotal": 1080.0,
+  "tax_rate": 0.08,
+  "tax_amount": 86.4,
+  "shipping": 0,
+  "total_amount": 1166.4,
+  "payment_terms": "Net 30",
+  "invoice_type": "missing_po",
+  "notes": "No PO reference \u2014 manual review required"
+}

@@ -1,0 +1,42 @@
+{
+  "invoice_number": "BILL-2025-3013",
+  "po_number": "PO-2025-008",
+  "vendor": {
+    "name": "Metro Facility Services",
+    "address": "147 Maintenance Rd, Boston, MA 02101",
+    "tax_id": "34-5678901"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-01-10",
+  "due_date": "2026-02-09",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Monthly Facility Maintenance",
+      "sku": "FAC-MAINT-MONTH",
+      "quantity": 1,
+      "unit_price": 2000.0,
+      "total": 2000.0
+    },
+    {
+      "description": "HVAC Service",
+      "sku": "HVAC-SERVICE",
+      "quantity": 1,
+      "unit_price": 1500.0,
+      "total": 1500.0
+    }
+  ],
+  "subtotal": 3500.0,
+  "tax_rate": 0.08,
+  "tax_amount": 280.0,
+  "shipping": 0,
+  "total_amount": 3780.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "closed_po",
+  "quality": "messy",
+  "notes": "Simulated poor-quality scan"
+}

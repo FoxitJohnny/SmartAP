@@ -1,0 +1,41 @@
+{
+  "invoice_number": "INV-2025-1013",
+  "po_number": null,
+  "vendor": {
+    "name": "Acme Office Supplies Inc.",
+    "address": "123 Business Blvd, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-15",
+  "due_date": "2026-03-17",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Copy Paper - Letter Size",
+      "sku": "CP-LTR",
+      "quantity": 25,
+      "unit_price": 38.0,
+      "total": 950.0
+    },
+    {
+      "description": "Sticky Notes - 12 Pack",
+      "sku": "SN-12",
+      "quantity": 30,
+      "unit_price": 6.5,
+      "total": 195.0
+    }
+  ],
+  "subtotal": 1145.0,
+  "tax_rate": 0.08,
+  "tax_amount": 91.6,
+  "shipping": 0,
+  "total_amount": 1236.6,
+  "payment_terms": "Net 30",
+  "invoice_type": "missing_po",
+  "notes": "No PO reference \u2014 manual review required"
+}

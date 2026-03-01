@@ -1,0 +1,41 @@
+{
+  "invoice_number": "INV-2025-1014",
+  "po_number": null,
+  "vendor": {
+    "name": "Metro Facility Services",
+    "address": "147 Maintenance Rd, Boston, MA 02101",
+    "tax_id": "34-5678901"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-09",
+  "due_date": "2026-03-11",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Building Cleaning Service",
+      "sku": "CLEAN-01",
+      "quantity": 1,
+      "unit_price": 1800.0,
+      "total": 1800.0
+    },
+    {
+      "description": "Pest Control - Quarterly",
+      "sku": "PEST-Q",
+      "quantity": 1,
+      "unit_price": 450.0,
+      "total": 450.0
+    }
+  ],
+  "subtotal": 2250.0,
+  "tax_rate": 0.08,
+  "tax_amount": 180.0,
+  "shipping": 0,
+  "total_amount": 2430.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "missing_po",
+  "notes": "Service invoice, no PO reference"
+}

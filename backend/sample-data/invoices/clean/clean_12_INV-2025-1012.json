@@ -1,0 +1,41 @@
+{
+  "invoice_number": "INV-2025-1012",
+  "po_number": "PO-2025-005",
+  "vendor": {
+    "name": "Premium IT Services",
+    "address": "987 Silicon Ave, Austin, TX 73301",
+    "tax_id": "89-0123456"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-24",
+  "due_date": "2026-03-26",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Software License - Annual",
+      "sku": "SW-LIC-ANNUAL",
+      "quantity": 10,
+      "unit_price": 300.0,
+      "total": 3000.0
+    },
+    {
+      "description": "Technical Support - 100 hours",
+      "sku": "TECH-SUPP-100",
+      "quantity": 1,
+      "unit_price": 2000.0,
+      "total": 2000.0
+    }
+  ],
+  "subtotal": 5000.0,
+  "tax_rate": 0.08,
+  "tax_amount": 400.0,
+  "shipping": 0,
+  "total_amount": 5400.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "partial_remaining",
+  "notes": "Second partial \u2014 remaining 10 licences + tech support"
+}

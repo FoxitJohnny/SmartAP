@@ -1,0 +1,42 @@
+{
+  "invoice_number": "BILL-2025-3014",
+  "po_number": null,
+  "vendor": {
+    "name": "Acme Office Supplies Inc.",
+    "address": "123 Business Blvd, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-01-24",
+  "due_date": "2026-02-23",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Envelopes - Box of 500",
+      "sku": "ENV-500",
+      "quantity": 10,
+      "unit_price": 22.0,
+      "total": 220.0
+    },
+    {
+      "description": "Binder Clips - Assorted",
+      "sku": "BC-ASST",
+      "quantity": 20,
+      "unit_price": 4.5,
+      "total": 90.0
+    }
+  ],
+  "subtotal": 310.0,
+  "tax_rate": 0.08,
+  "tax_amount": 24.8,
+  "shipping": 0,
+  "total_amount": 334.8,
+  "payment_terms": "Net 30",
+  "invoice_type": "missing_po",
+  "quality": "messy",
+  "notes": "Simulated poor-quality scan"
+}

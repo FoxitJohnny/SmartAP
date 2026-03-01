@@ -1,0 +1,34 @@
+{
+  "invoice_number": "INV-2025-1006",
+  "po_number": "PO-2025-010",
+  "vendor": {
+    "name": "FastShip Express",
+    "address": "258 Express Way, Miami, FL 33101",
+    "tax_id": "56-7890123"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-28",
+  "due_date": "2026-03-30",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Express Shipping - 3 packages",
+      "sku": "SHIP-EXP",
+      "quantity": 3,
+      "unit_price": 250.0,
+      "total": 750.0
+    }
+  ],
+  "subtotal": 750.0,
+  "tax_rate": 0.08,
+  "tax_amount": 60.0,
+  "shipping": 0,
+  "total_amount": 810.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "exact_match",
+  "notes": "Express shipping \u2014 matches PO-2025-010 exactly"
+}

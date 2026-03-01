@@ -1,0 +1,237 @@
+{
+  "invoice_number": "INV-2025-2002",
+  "po_number": "PO-2025-002",
+  "vendor": {
+    "name": "TechGear Solutions",
+    "address": "456 Tech Park Dr, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-09",
+  "due_date": "2026-03-11",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 15,
+      "unit_price": 1500.0,
+      "total": 22500.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 13,
+      "unit_price": 250.0,
+      "total": 3250.0
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 9,
+      "unit_price": 325.0,
+      "total": 2925.0
+    },
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 18,
+      "unit_price": 1500.0,
+      "total": 27000.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 8,
+      "unit_price": 250.0,
+      "total": 2000.0
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 11,
+      "unit_price": 325.0,
+      "total": 3575.0
+    },
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 2,
+      "unit_price": 1500.0,
+      "total": 3000.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 8,
+      "unit_price": 250.0,
+      "total": 2000.0
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 2,
+      "unit_price": 325.0,
+      "total": 650.0
+    },
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 11,
+      "unit_price": 1500.0,
+      "total": 16500.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 13,
+      "unit_price": 250.0,
+      "total": 3250.0
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 9,
+      "unit_price": 325.0,
+      "total": 2925.0
+    },
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 3,
+      "unit_price": 1500.0,
+      "total": 4500.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 7,
+      "unit_price": 250.0,
+      "total": 1750.0
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 19,
+      "unit_price": 325.0,
+      "total": 6175.0
+    },
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 11,
+      "unit_price": 1500.0,
+      "total": 16500.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 7,
+      "unit_price": 250.0,
+      "total": 1750.0
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 16,
+      "unit_price": 325.0,
+      "total": 5200.0
+    },
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 13,
+      "unit_price": 1500.0,
+      "total": 19500.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 15,
+      "unit_price": 250.0,
+      "total": 3750.0
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 5,
+      "unit_price": 325.0,
+      "total": 1625.0
+    },
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 9,
+      "unit_price": 1500.0,
+      "total": 13500.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 5,
+      "unit_price": 250.0,
+      "total": 1250.0
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 8,
+      "unit_price": 325.0,
+      "total": 2600.0
+    },
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 18,
+      "unit_price": 1500.0,
+      "total": 27000.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 18,
+      "unit_price": 250.0,
+      "total": 4500.0
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 9,
+      "unit_price": 325.0,
+      "total": 2925.0
+    },
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 19,
+      "unit_price": 1500.0,
+      "total": 28500.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 14,
+      "unit_price": 250.0,
+      "total": 3500.0
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 19,
+      "unit_price": 325.0,
+      "total": 6175.0
+    }
+  ],
+  "subtotal": 240275.0,
+  "tax_rate": 0.08,
+  "tax_amount": 19222.0,
+  "shipping": 0,
+  "total_amount": 259497.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "multi-page",
+  "page_count": 2
+}

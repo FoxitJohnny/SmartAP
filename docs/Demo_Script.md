@@ -40,13 +40,13 @@ All sample files for the demo are in:
 
 ### Files to Use in Demo
 
-| Scenario | File | Purpose |
-|----------|------|---------|
-| Happy Path | `clean/clean_01_NO-2026-9469.pdf` | Standard invoice, shows AI extraction |
-| Multi-page | `edge-cases/multipage_01_INV-2026-4808.pdf` | Complex invoice with multiple pages |
-| Missing PO | `edge-cases/missing_po_01_INV-2026-7388.pdf` | Invoice without matching PO |
-| Price Spike | `edge-cases/price_spike_01_BILL-2024-8162.pdf` | Anomalous pricing for fraud detection |
-| Duplicate | `edge-cases/duplicate_01.pdf` | Duplicate invoice detection |
+| Scenario | File | PO | Purpose |
+|----------|------|----|---------|
+| Happy Path | `clean/clean_01_INV-2025-1001.pdf` | PO-2025-001 | Exact match — office supplies from Acme |
+| Multi-page | `edge-cases/multipage_01_INV-2025-2001.pdf` | PO-2025-001 | Complex invoice with multiple pages |
+| Missing PO | `edge-cases/missing_po_01_INV-2025-2301.pdf` | — | Invoice without matching PO |
+| Price Spike | `edge-cases/price_spike_01_INV-2025-2201.pdf` | PO-2025-001 | 3× PO prices — triggers fraud alert |
+| Duplicate | `edge-cases/duplicate_01_INV-2025-2101.pdf` | PO-2025-001 | Duplicate of happy-path invoice |
 
 ---
 
@@ -84,7 +84,7 @@ All sample files for the demo are in:
 
 **Actions:**
 1. Click **"Upload Invoice"** button (top right) or navigate to `/invoices/upload`
-2. Drag and drop `clean/clean_01_NO-2026-9469.pdf`
+2. Drag and drop `clean/clean_01_INV-2025-1001.pdf`
 3. Watch the AI extraction progress indicator
 4. Review the extracted data
 
@@ -130,7 +130,7 @@ All sample files for the demo are in:
 
 **Actions:**
 1. Go back to Invoices list
-2. Upload `edge-cases/price_spike_01_BILL-2024-8162.pdf`
+2. Upload `edge-cases/price_spike_01_INV-2025-2201.pdf`
 3. Run matching
 4. Show the anomaly detected:
    - ⚠️ Price anomaly: Unusual pricing pattern
@@ -161,8 +161,8 @@ All sample files for the demo are in:
 ### Demo 4B: Duplicate Invoice Detection
 
 **Actions:**
-1. Upload `edge-cases/duplicate_01.pdf`
-2. Then upload `edge-cases/duplicate_02.pdf` (same invoice, different file)
+1. Upload `edge-cases/duplicate_01_INV-2025-2101.pdf`
+2. Then upload `edge-cases/duplicate_02_INV-2025-2102.pdf` (same vendor/amount, different invoice #)
 3. Watch the fraud detection alert appear
 4. Show the risk assessment panel:
    - 🔴 DUPLICATE DETECTED
@@ -175,7 +175,7 @@ All sample files for the demo are in:
 ### Demo 4C: Missing PO Alert
 
 **Actions:**
-1. Upload `edge-cases/missing_po_01_INV-2026-7388.pdf`
+1. Upload `edge-cases/missing_po_01_INV-2025-2301.pdf`
 2. Show the alert:
    - ⚠️ No matching PO found
    - Requires manual review

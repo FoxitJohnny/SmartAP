@@ -1,0 +1,42 @@
+{
+  "invoice_number": "INV-2025-2103",
+  "po_number": "PO-2025-003",
+  "vendor": {
+    "name": "QuickPrint Services",
+    "address": "789 Print Lane, Chicago, IL 60601",
+    "tax_id": "45-1234567"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-26",
+  "due_date": "2026-03-28",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Business Cards - 1000 qty",
+      "sku": "BC-1000",
+      "quantity": 10,
+      "unit_price": 50.0,
+      "total": 500.0
+    },
+    {
+      "description": "Brochures - Full Color",
+      "sku": "BR-COLOR",
+      "quantity": 5,
+      "unit_price": 140.0,
+      "total": 700.0
+    }
+  ],
+  "subtotal": 1200.0,
+  "tax_rate": 0.08,
+  "tax_amount": 96.0,
+  "shipping": 0,
+  "total_amount": 1296.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "duplicate",
+  "notes": "Printing services \u2014 matches PO-2025-003 exactly",
+  "original_invoice": "INV-2025-1003"
+}

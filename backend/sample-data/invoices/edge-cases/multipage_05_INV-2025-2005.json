@@ -1,0 +1,244 @@
+{
+  "invoice_number": "INV-2025-2005",
+  "po_number": "PO-2025-001",
+  "vendor": {
+    "name": "Acme Office Supplies Inc.",
+    "address": "123 Business Blvd, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-01-25",
+  "due_date": "2026-02-24",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Printer Paper - 10 reams",
+      "sku": "PP-100",
+      "quantity": 18,
+      "unit_price": 45.0,
+      "total": 810.0
+    },
+    {
+      "description": "Stapler Set",
+      "sku": "ST-250",
+      "quantity": 7,
+      "unit_price": 15.0,
+      "total": 105.0
+    },
+    {
+      "description": "File Folders - Box of 100",
+      "sku": "FF-300",
+      "quantity": 10,
+      "unit_price": 12.0,
+      "total": 120.0
+    },
+    {
+      "description": "Ballpoint Pens - Pack of 12",
+      "sku": "BP-400",
+      "quantity": 13,
+      "unit_price": 8.0,
+      "total": 104.0
+    },
+    {
+      "description": "Desk Organizers",
+      "sku": "DO-500",
+      "quantity": 12,
+      "unit_price": 25.0,
+      "total": 300.0
+    },
+    {
+      "description": "Whiteboard Markers - 4-Pack",
+      "sku": "WM-600",
+      "quantity": 15,
+      "unit_price": 22.0,
+      "total": 330.0
+    },
+    {
+      "description": "Printer Paper - 10 reams",
+      "sku": "PP-100",
+      "quantity": 17,
+      "unit_price": 45.0,
+      "total": 765.0
+    },
+    {
+      "description": "Stapler Set",
+      "sku": "ST-250",
+      "quantity": 15,
+      "unit_price": 15.0,
+      "total": 225.0
+    },
+    {
+      "description": "File Folders - Box of 100",
+      "sku": "FF-300",
+      "quantity": 4,
+      "unit_price": 12.0,
+      "total": 48.0
+    },
+    {
+      "description": "Ballpoint Pens - Pack of 12",
+      "sku": "BP-400",
+      "quantity": 8,
+      "unit_price": 8.0,
+      "total": 64.0
+    },
+    {
+      "description": "Desk Organizers",
+      "sku": "DO-500",
+      "quantity": 8,
+      "unit_price": 25.0,
+      "total": 200.0
+    },
+    {
+      "description": "Whiteboard Markers - 4-Pack",
+      "sku": "WM-600",
+      "quantity": 3,
+      "unit_price": 22.0,
+      "total": 66.0
+    },
+    {
+      "description": "Printer Paper - 10 reams",
+      "sku": "PP-100",
+      "quantity": 11,
+      "unit_price": 45.0,
+      "total": 495.0
+    },
+    {
+      "description": "Stapler Set",
+      "sku": "ST-250",
+      "quantity": 1,
+      "unit_price": 15.0,
+      "total": 15.0
+    },
+    {
+      "description": "File Folders - Box of 100",
+      "sku": "FF-300",
+      "quantity": 19,
+      "unit_price": 12.0,
+      "total": 228.0
+    },
+    {
+      "description": "Ballpoint Pens - Pack of 12",
+      "sku": "BP-400",
+      "quantity": 18,
+      "unit_price": 8.0,
+      "total": 144.0
+    },
+    {
+      "description": "Desk Organizers",
+      "sku": "DO-500",
+      "quantity": 8,
+      "unit_price": 25.0,
+      "total": 200.0
+    },
+    {
+      "description": "Whiteboard Markers - 4-Pack",
+      "sku": "WM-600",
+      "quantity": 19,
+      "unit_price": 22.0,
+      "total": 418.0
+    },
+    {
+      "description": "Printer Paper - 10 reams",
+      "sku": "PP-100",
+      "quantity": 8,
+      "unit_price": 45.0,
+      "total": 360.0
+    },
+    {
+      "description": "Stapler Set",
+      "sku": "ST-250",
+      "quantity": 1,
+      "unit_price": 15.0,
+      "total": 15.0
+    },
+    {
+      "description": "File Folders - Box of 100",
+      "sku": "FF-300",
+      "quantity": 3,
+      "unit_price": 12.0,
+      "total": 36.0
+    },
+    {
+      "description": "Ballpoint Pens - Pack of 12",
+      "sku": "BP-400",
+      "quantity": 2,
+      "unit_price": 8.0,
+      "total": 16.0
+    },
+    {
+      "description": "Desk Organizers",
+      "sku": "DO-500",
+      "quantity": 8,
+      "unit_price": 25.0,
+      "total": 200.0
+    },
+    {
+      "description": "Whiteboard Markers - 4-Pack",
+      "sku": "WM-600",
+      "quantity": 3,
+      "unit_price": 22.0,
+      "total": 66.0
+    },
+    {
+      "description": "Printer Paper - 10 reams",
+      "sku": "PP-100",
+      "quantity": 2,
+      "unit_price": 45.0,
+      "total": 90.0
+    },
+    {
+      "description": "Stapler Set",
+      "sku": "ST-250",
+      "quantity": 11,
+      "unit_price": 15.0,
+      "total": 165.0
+    },
+    {
+      "description": "File Folders - Box of 100",
+      "sku": "FF-300",
+      "quantity": 3,
+      "unit_price": 12.0,
+      "total": 36.0
+    },
+    {
+      "description": "Ballpoint Pens - Pack of 12",
+      "sku": "BP-400",
+      "quantity": 17,
+      "unit_price": 8.0,
+      "total": 136.0
+    },
+    {
+      "description": "Desk Organizers",
+      "sku": "DO-500",
+      "quantity": 8,
+      "unit_price": 25.0,
+      "total": 200.0
+    },
+    {
+      "description": "Whiteboard Markers - 4-Pack",
+      "sku": "WM-600",
+      "quantity": 9,
+      "unit_price": 22.0,
+      "total": 198.0
+    },
+    {
+      "description": "Printer Paper - 10 reams",
+      "sku": "PP-100",
+      "quantity": 16,
+      "unit_price": 45.0,
+      "total": 720.0
+    }
+  ],
+  "subtotal": 6875.0,
+  "tax_rate": 0.08,
+  "tax_amount": 550.0,
+  "shipping": 0,
+  "total_amount": 7425.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "multi-page",
+  "page_count": 2
+}

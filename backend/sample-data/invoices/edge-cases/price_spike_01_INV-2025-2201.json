@@ -1,0 +1,69 @@
+{
+  "invoice_number": "INV-2025-2201",
+  "po_number": "PO-2025-001",
+  "vendor": {
+    "name": "Acme Office Supplies Inc.",
+    "address": "123 Business Blvd, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-24",
+  "due_date": "2026-03-26",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Printer Paper - 10 reams",
+      "sku": "PP-100",
+      "quantity": 10,
+      "unit_price": 135.0,
+      "total": 1350.0
+    },
+    {
+      "description": "Stapler Set",
+      "sku": "ST-250",
+      "quantity": 20,
+      "unit_price": 45.0,
+      "total": 900.0
+    },
+    {
+      "description": "File Folders - Box of 100",
+      "sku": "FF-300",
+      "quantity": 50,
+      "unit_price": 36.0,
+      "total": 1800.0
+    },
+    {
+      "description": "Ballpoint Pens - Pack of 12",
+      "sku": "BP-400",
+      "quantity": 100,
+      "unit_price": 24.0,
+      "total": 2400.0
+    },
+    {
+      "description": "Desk Organizers",
+      "sku": "DO-500",
+      "quantity": 50,
+      "unit_price": 75.0,
+      "total": 3750.0
+    },
+    {
+      "description": "Whiteboard Markers - 4-Pack",
+      "sku": "WM-600",
+      "quantity": 50,
+      "unit_price": 66.0,
+      "total": 3300.0
+    }
+  ],
+  "subtotal": 13500.0,
+  "tax_rate": 0.08,
+  "tax_amount": 1080.0,
+  "shipping": 0,
+  "total_amount": 14580.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "price_spike",
+  "notes": "All prices 3.0x PO amounts \u2014 should trigger price-spike alert"
+}

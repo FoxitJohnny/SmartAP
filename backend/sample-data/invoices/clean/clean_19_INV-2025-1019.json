@@ -1,0 +1,48 @@
+{
+  "invoice_number": "INV-2025-1019",
+  "po_number": "PO-2025-001",
+  "vendor": {
+    "name": "Acme Office Supplies Inc.",
+    "address": "123 Business Blvd, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-23",
+  "due_date": "2026-03-25",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Printer Paper - 10 reams",
+      "sku": "PP-100",
+      "quantity": 10,
+      "unit_price": 45.0,
+      "total": 450.0
+    },
+    {
+      "description": "File Folders - Box of 100",
+      "sku": "FF-300",
+      "quantity": 50,
+      "unit_price": 12.0,
+      "total": 600.0
+    },
+    {
+      "description": "Desk Organizers",
+      "sku": "DO-500",
+      "quantity": 50,
+      "unit_price": 25.0,
+      "total": 1250.0
+    }
+  ],
+  "subtotal": 2300.0,
+  "tax_rate": 0.08,
+  "tax_amount": 184.0,
+  "shipping": 0,
+  "total_amount": 2484.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "partial_shipment",
+  "notes": "Partial shipment \u2014 3 of 6 PO line items"
+}

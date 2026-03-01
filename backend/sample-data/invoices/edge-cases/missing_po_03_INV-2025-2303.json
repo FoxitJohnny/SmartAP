@@ -1,0 +1,34 @@
+{
+  "invoice_number": "INV-2025-2303",
+  "po_number": null,
+  "vendor": {
+    "name": "Metro Facility Services",
+    "address": "147 Maintenance Rd, Boston, MA 02101",
+    "tax_id": "34-5678901"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-10",
+  "due_date": "2026-03-12",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Window Cleaning Service",
+      "sku": "WIN-CLN",
+      "quantity": 1,
+      "unit_price": 600.0,
+      "total": 600.0
+    }
+  ],
+  "subtotal": 600.0,
+  "tax_rate": 0.08,
+  "tax_amount": 48.0,
+  "shipping": 0,
+  "total_amount": 648.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "missing_po",
+  "notes": "No PO reference \u2014 manual review required"
+}

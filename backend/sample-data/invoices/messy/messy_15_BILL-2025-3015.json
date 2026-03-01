@@ -1,0 +1,49 @@
+{
+  "invoice_number": "BILL-2025-3015",
+  "po_number": "PO-2025-001",
+  "vendor": {
+    "name": "Acme Office Supplies Inc.",
+    "address": "123 Business Blvd, New York, NY 10001",
+    "tax_id": "12-3456789"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-01-29",
+  "due_date": "2026-02-28",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Stapler Set",
+      "sku": "ST-250",
+      "quantity": 20,
+      "unit_price": 15.0,
+      "total": 300.0
+    },
+    {
+      "description": "Ballpoint Pens - Pack of 12",
+      "sku": "BP-400",
+      "quantity": 100,
+      "unit_price": 8.0,
+      "total": 800.0
+    },
+    {
+      "description": "Whiteboard Markers - 4-Pack",
+      "sku": "WM-600",
+      "quantity": 50,
+      "unit_price": 22.0,
+      "total": 1100.0
+    }
+  ],
+  "subtotal": 2200.0,
+  "tax_rate": 0.08,
+  "tax_amount": 176.0,
+  "shipping": 0,
+  "total_amount": 2376.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "partial_shipment",
+  "quality": "messy",
+  "notes": "Simulated poor-quality scan"
+}

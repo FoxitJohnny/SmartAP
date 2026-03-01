@@ -231,11 +231,11 @@ Phase 5.2 delivers 50 synthetic invoice samples covering 15+ real-world scenario
 ## Generated Scenarios
 
 ### Clean Invoice Scenarios
-1. **US Standard (5):** Clean fonts, structured layout, USD currency
-   - Example: `clean_01_NO-2026-9469.pdf`
-   - Vendor: Marketing Agency Pro
-   - Amount: $5,748.82
-   - Line items: 5 (software, hardware)
+1. **Exact Matches (6):** Invoices that match open POs exactly
+   - Example: `clean_01_INV-2025-1001.pdf`
+   - Vendor: Acme Office Supplies Inc. (V001)
+   - PO: PO-2025-001, Amount: $4,860.00
+   - Line items: 6 (office supplies)
 
 2. **International (5):** EUR/GBP/JPY currencies, different date formats
    - Example: `clean_06_INVOICE-2025-8459.pdf`
@@ -333,7 +333,7 @@ Next step: Upload invoices to SmartAP and measure extraction accuracy
 ```bash
 # Upload single invoice
 curl -X POST http://localhost:8000/api/invoices/upload \
-  -F "file=@backend/sample-data/invoices/clean/clean_01_NO-2026-9469.pdf"
+  -F "file=@backend/sample-data/invoices/clean/clean_01_INV-2025-1001.pdf"
 
 # Upload batch (all clean invoices)
 for file in backend/sample-data/invoices/clean/*.pdf; do
@@ -369,7 +369,7 @@ def validate_extraction(extracted_data, ground_truth_path):
 
 # Example usage
 extracted = {...}  # From AI extraction
-ground_truth_file = 'sample-data/invoices/clean/clean_01_NO-2026-9469.json'
+ground_truth_file = 'sample-data/invoices/clean/clean_01_INV-2025-1001.json'
 accuracy = validate_extraction(extracted, ground_truth_file)
 print(f"Accuracy: {sum(accuracy.values()) / len(accuracy) * 100}%")
 ```

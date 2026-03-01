@@ -1,25 +1,28 @@
 {
-  "generation_date": "2026-01-08 13:11:24",
-  "total_invoices": 46,
+  "generation_date": "2026-03-01 00:40:36",
+  "total_invoices": 50,
   "clean_invoices": 20,
   "messy_invoices": 15,
   "edge_case_invoices": 15,
   "currency_distribution": {
-    "USD": 39,
-    "JPY": 5,
-    "GBP": 2
+    "USD": 50
   },
   "invoice_types": {
-    "us_standard": 5,
-    "international": 5,
-    "service": 5,
-    "product": 5,
-    "standard": 15,
+    "exact_match": 12,
+    "partial_delivery": 4,
+    "price_variance": 2,
+    "quantity_mismatch": 2,
+    "overbilled": 2,
+    "partial_remaining": 1,
+    "missing_po": 8,
+    "closed_po": 5,
+    "partial_shipment": 2,
+    "discount_applied": 1,
     "multi-page": 5,
     "duplicate": 3,
     "price_spike": 3
   },
-  "total_value": 1260720.37,
-  "average_invoice_value": 27406.96,
-  "po_coverage": 84.8
+  "total_value": 4721906.88,
+  "average_invoice_value": 94438.14,
+  "po_coverage": 84.0
 }

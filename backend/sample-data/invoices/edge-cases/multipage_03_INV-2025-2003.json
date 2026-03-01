@@ -1,0 +1,286 @@
+{
+  "invoice_number": "INV-2025-2003",
+  "po_number": "PO-2025-004",
+  "vendor": {
+    "name": "Global Logistics LLC",
+    "address": "321 Shipping Way, Houston, TX 77001",
+    "tax_id": "67-8901234"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-04",
+  "due_date": "2026-03-06",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 12,
+      "unit_price": 8000.0,
+      "total": 96000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 8,
+      "unit_price": 10000.0,
+      "total": 80000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 5,
+      "unit_price": 8000.0,
+      "total": 40000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 17,
+      "unit_price": 10000.0,
+      "total": 170000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 16,
+      "unit_price": 8000.0,
+      "total": 128000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 3,
+      "unit_price": 10000.0,
+      "total": 30000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 2,
+      "unit_price": 8000.0,
+      "total": 16000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 4,
+      "unit_price": 10000.0,
+      "total": 40000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 5,
+      "unit_price": 8000.0,
+      "total": 40000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 6,
+      "unit_price": 10000.0,
+      "total": 60000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 14,
+      "unit_price": 8000.0,
+      "total": 112000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 20,
+      "unit_price": 10000.0,
+      "total": 200000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 3,
+      "unit_price": 8000.0,
+      "total": 24000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 13,
+      "unit_price": 10000.0,
+      "total": 130000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 13,
+      "unit_price": 8000.0,
+      "total": 104000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 20,
+      "unit_price": 10000.0,
+      "total": 200000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 15,
+      "unit_price": 8000.0,
+      "total": 120000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 17,
+      "unit_price": 10000.0,
+      "total": 170000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 9,
+      "unit_price": 8000.0,
+      "total": 72000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 18,
+      "unit_price": 10000.0,
+      "total": 180000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 1,
+      "unit_price": 8000.0,
+      "total": 8000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 4,
+      "unit_price": 10000.0,
+      "total": 40000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 18,
+      "unit_price": 8000.0,
+      "total": 144000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 9,
+      "unit_price": 10000.0,
+      "total": 90000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 11,
+      "unit_price": 8000.0,
+      "total": 88000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 4,
+      "unit_price": 10000.0,
+      "total": 40000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 10,
+      "unit_price": 8000.0,
+      "total": 80000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 14,
+      "unit_price": 10000.0,
+      "total": 140000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 6,
+      "unit_price": 8000.0,
+      "total": 48000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 15,
+      "unit_price": 10000.0,
+      "total": 150000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 1,
+      "unit_price": 8000.0,
+      "total": 8000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 9,
+      "unit_price": 10000.0,
+      "total": 90000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 17,
+      "unit_price": 8000.0,
+      "total": 136000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 6,
+      "unit_price": 10000.0,
+      "total": 60000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 17,
+      "unit_price": 8000.0,
+      "total": 136000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 4,
+      "unit_price": 10000.0,
+      "total": 40000.0
+    },
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 10,
+      "unit_price": 8000.0,
+      "total": 80000.0
+    }
+  ],
+  "subtotal": 3390000.0,
+  "tax_rate": 0.08,
+  "tax_amount": 271200.0,
+  "shipping": 0,
+  "total_amount": 3661200.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "multi-page",
+  "page_count": 2
+}

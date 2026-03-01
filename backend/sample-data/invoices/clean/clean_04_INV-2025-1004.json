@@ -1,0 +1,41 @@
+{
+  "invoice_number": "INV-2025-1004",
+  "po_number": "PO-2025-004",
+  "vendor": {
+    "name": "Global Logistics LLC",
+    "address": "321 Shipping Way, Houston, TX 77001",
+    "tax_id": "67-8901234"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-04",
+  "due_date": "2026-03-06",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Freight Shipping - West Coast",
+      "sku": "FREIGHT-WC",
+      "quantity": 1,
+      "unit_price": 8000.0,
+      "total": 8000.0
+    },
+    {
+      "description": "Freight Shipping - East Coast",
+      "sku": "FREIGHT-EC",
+      "quantity": 1,
+      "unit_price": 10000.0,
+      "total": 10000.0
+    }
+  ],
+  "subtotal": 18000.0,
+  "tax_rate": 0.08,
+  "tax_amount": 1440.0,
+  "shipping": 0,
+  "total_amount": 19440.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "exact_match",
+  "notes": "Freight shipping \u2014 matches PO-2025-004 exactly"
+}

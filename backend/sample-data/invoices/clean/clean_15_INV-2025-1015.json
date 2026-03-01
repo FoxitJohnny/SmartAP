@@ -1,0 +1,41 @@
+{
+  "invoice_number": "INV-2025-1015",
+  "po_number": null,
+  "vendor": {
+    "name": "Enterprise Solutions Group",
+    "address": "741 Corporate Plaza, Atlanta, GA 30301",
+    "tax_id": "90-1234567"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-12",
+  "due_date": "2026-03-14",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Strategic Consulting - 40 hrs",
+      "sku": "CON-40",
+      "quantity": 40,
+      "unit_price": 250.0,
+      "total": 10000.0
+    },
+    {
+      "description": "Project Setup Fee",
+      "sku": "SETUP-01",
+      "quantity": 1,
+      "unit_price": 2500.0,
+      "total": 2500.0
+    }
+  ],
+  "subtotal": 12500.0,
+  "tax_rate": 0.08,
+  "tax_amount": 1000.0,
+  "shipping": 0,
+  "total_amount": 13500.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "missing_po",
+  "notes": "Enterprise consulting, no PO reference"
+}

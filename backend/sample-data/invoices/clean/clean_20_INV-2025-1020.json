@@ -1,0 +1,48 @@
+{
+  "invoice_number": "INV-2025-1020",
+  "po_number": "PO-2025-002",
+  "vendor": {
+    "name": "TechGear Solutions",
+    "address": "456 Tech Park Dr, San Francisco, CA 94102",
+    "tax_id": "98-7654321"
+  },
+  "customer": {
+    "name": "Contoso Ltd",
+    "address": "100 Corporate Blvd, Suite 500, Dallas, TX 75201",
+    "tax_id": "11-2345678"
+  },
+  "invoice_date": "2026-02-25",
+  "due_date": "2026-03-27",
+  "currency": "USD",
+  "line_items": [
+    {
+      "description": "Laptop Computer - Dell XPS 15",
+      "sku": "LAP-XPS15",
+      "quantity": 5,
+      "unit_price": 1425.0,
+      "total": 7125.0
+    },
+    {
+      "description": "USB-C Docking Station",
+      "sku": "DOCK-USBC",
+      "quantity": 5,
+      "unit_price": 237.5,
+      "total": 1187.5
+    },
+    {
+      "description": "27-inch Monitor",
+      "sku": "MON-27",
+      "quantity": 10,
+      "unit_price": 308.75,
+      "total": 3087.5
+    }
+  ],
+  "subtotal": 11400.0,
+  "tax_rate": 0.08,
+  "tax_amount": 912.0,
+  "shipping": 0,
+  "total_amount": 12312.0,
+  "payment_terms": "Net 30",
+  "invoice_type": "discount_applied",
+  "notes": "Negotiated 5% discount on all items"
+}
